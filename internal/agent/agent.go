@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -76,32 +77,7 @@ func (a *agent) Send() {
 		select {
 		case <-tick.C:
 			exposeMetrics := a.collector.ExposeMetrics()
-			err := func(metrics []ExposeMetric) error {
-				for _, metric := range metrics {
-					metricURI := fmt.Sprintf("update/%s/%s/%v", metric.Type, metric.ID, metric.Value)
-					endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, metricURI)
-					request, err := http.NewRequest(http.MethodPost, endpoint, nil)
-
-					if err != nil {
-						return fmt.Errorf("failed create request: %v", err)
-					}
-
-					request.Header.Add("Content-Type", a.Config.serverContentType)
-
-					response, err := a.httpClient.Do(request)
-
-					if err != nil {
-						return fmt.Errorf("failed send request: %v", err)
-					}
-
-					err = response.Body.Close()
-
-					if err != nil {
-						return fmt.Errorf("failed close response body: %v", err)
-					}
-				}
-				return nil
-			}(exposeMetrics)
+			err := a.SendToSever(exposeMetrics)
 
 			if err != nil {
 				log.Printf("agent send error: %v", err)
@@ -161,4 +137,32 @@ func NewAgent(config *agentConfig) Agent {
 		Config:     config,
 		httpClient: http.Client{},
 	}
+}
+
+func (a *agent) SendToSever(metrics []ExposeMetric) error {
+	for _, metric := range metrics {
+		metricURI := fmt.Sprintf("update/%s/%s/%v", strings.ToLower(metric.Type),
+			metric.ID, metric.Value)
+		endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, metricURI)
+		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+
+		if err != nil {
+			return fmt.Errorf("failed create request: %v", err)
+		}
+
+		request.Header.Add("Content-Type", a.Config.serverContentType)
+
+		response, err := a.httpClient.Do(request)
+
+		if err != nil {
+			return fmt.Errorf("failed send request: %v", err)
+		}
+
+		err = response.Body.Close()
+
+		if err != nil {
+			return fmt.Errorf("failed close response body: %v", err)
+		}
+	}
+	return nil
 }

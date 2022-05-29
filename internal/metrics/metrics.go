@@ -1,9 +1,11 @@
 package metrics
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"runtime"
+	"strconv"
 )
 
 type Gauge float64
@@ -59,4 +61,24 @@ func (m *Metrics) Collect() {
 
 	m.PollCount++
 	m.RandomValue = Gauge(rand.Float64())
+}
+
+func ParseCounter(s string) (Counter, error) {
+	n, err := strconv.Atoi(s)
+
+	if err != nil {
+		return 0, fmt.Errorf("fnParseCounter: can't parse: %v", err)
+	}
+
+	return Counter(n), nil
+}
+
+func ParseGause(s string) (Gauge, error) {
+	n, err := strconv.ParseFloat(s, 64)
+
+	if err != nil {
+		return 0, fmt.Errorf("fnParseGause: can't parse: %v", err)
+	}
+
+	return Gauge(n), nil
 }
