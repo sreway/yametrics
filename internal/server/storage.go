@@ -9,10 +9,13 @@ import (
 var (
 	ErrInvalidMetricValue = errors.New("invalid metric value")
 	ErrInvalidMetricType  = errors.New("invalid metric type")
+	ErrNotFoundMetric     = errors.New("not found metric")
 )
 
 type Storage interface {
 	Save(metricType, metricName, metricValue string) error
+	GetMetricValue(metricType, metricName string) (interface{}, error)
+	GetMetrics() map[string]map[string]interface{}
 }
 
 type storage struct {
@@ -54,6 +57,27 @@ func (s *storage) Save(metricType, metricName, metricValue string) error {
 	}
 
 	return nil
+}
+
+func (s *storage) GetMetricValue(metricType, metricName string) (interface{}, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	switch metricType {
+	case "counter", "gauge":
+		metricValue, exist := s.metrics[metricType][metricName]
+		if exist {
+			return metricValue, nil
+		} else {
+			return nil, ErrNotFoundMetric
+		}
+	default:
+		return nil, ErrInvalidMetricType
+	}
+}
+
+func (s *storage) GetMetrics() map[string]map[string]interface{} {
+	return s.metrics
 }
 
 func NewStorage() Storage {

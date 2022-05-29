@@ -3,60 +3,51 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"html/template"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
 )
+
+var indexTmpl = `
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>YaMetrics</title>
+    </head>
+    <body>
+		{{range $mtype, $metrics := .}}
+		{{range $mname, $mvalue := $metrics}}
+		<p>{{$mname}}: {{$mvalue}}</p>
+		{{end}}
+		{{end}}
+    </body>
+</html>`
 
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	resp := make(map[string]string)
 
-	switch r.Method {
-	case http.MethodPost:
+	metricType := chi.URLParam(r, "metricType")
+	metricName := chi.URLParam(r, "metricName")
+	metricValue := chi.URLParam(r, "metricValue")
 
-		u, err := url.Parse(r.RequestURI)
+	err := s.saveMetric(metricType, metricName, metricValue)
 
-		if err != nil {
-			log.Printf("parse request uri error: %v", err)
-			resp["error"] = "Incorrect URI"
+	if err != nil {
+		log.Printf("storage save: %v", err)
+		resp["error"] = "Can't save metric"
+		switch err {
+		case ErrInvalidMetricType:
+			w.WriteHeader(http.StatusNotImplemented)
+		case ErrInvalidMetricValue:
 			w.WriteHeader(http.StatusBadRequest)
-			break
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
 		}
-
-		pathSlice := strings.Split(u.Path, "/")
-
-		if len(pathSlice) != 5 {
-			resp["error"] = "Incorrect URI"
-			w.WriteHeader(http.StatusNotFound)
-			break
-		}
-
-		metricType, metricName, metricValue := pathSlice[2], pathSlice[3], pathSlice[4]
-
-		err = s.storage.Save(metricType, metricName, metricValue)
-
-		if err != nil {
-			log.Printf("storage save: %v", err)
-			resp["error"] = "Can't save metric"
-			switch err {
-			case ErrInvalidMetricType:
-				w.WriteHeader(http.StatusNotImplemented)
-			case ErrInvalidMetricValue:
-				w.WriteHeader(http.StatusBadRequest)
-			default:
-				w.WriteHeader(http.StatusNotImplemented)
-			}
-			break
-		}
-
+	} else {
 		resp["message"] = "Success save metric"
 		w.WriteHeader(http.StatusOK)
-
-	default:
-		resp["error"] = fmt.Sprintf("Incorrect http method for URI %s", r.RequestURI)
-		w.WriteHeader(405)
 	}
 
 	jsonResp, err := json.Marshal(resp)
@@ -68,5 +59,43 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("update metric: error write json response: %v", err)
+	}
+}
+
+func (s *server) Index(w http.ResponseWriter, r *http.Request) {
+
+	metrics := s.getMetrics()
+	tmpl := template.Must(template.New("metrics").Parse(indexTmpl))
+	err := tmpl.Execute(w, metrics)
+
+	if err != nil {
+		log.Printf("index error: %v", err)
+		w.WriteHeader(http.StatusNotImplemented)
+	}
+
+}
+
+func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "text/plain")
+	metricName := chi.URLParam(r, "metricName")
+	metricType := chi.URLParam(r, "metricType")
+	val, err := s.getMetricValue(metricType, metricName)
+
+	if err != nil {
+		switch err {
+		case ErrInvalidMetricValue:
+			w.WriteHeader(http.StatusBadRequest)
+		case ErrNotFoundMetric:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+			log.Printf("get metric value: %v", err)
+		}
+	}
+	_, err = w.Write([]byte(fmt.Sprintf("%v", val)))
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotImplemented)
+		log.Printf("get metric value: error write bytes response: %v", err)
 	}
 }

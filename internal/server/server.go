@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"os"
@@ -35,6 +36,7 @@ func NewServer(config *serverConfig) Server {
 		&http.Server{
 			Addr: fmt.Sprintf("%s:%s", config.address, config.port),
 		},
+
 		NewStorage(),
 		ctx,
 		cancel,
@@ -43,8 +45,12 @@ func NewServer(config *serverConfig) Server {
 }
 
 func (s *server) Start() {
-	http.HandleFunc("/update/", s.UpdateMetric)
+	r := chi.NewRouter()
+	s.initRoutes(r)
+	s.httpServer.Handler = r
+
 	err := s.httpServer.ListenAndServe()
+
 	if err != nil {
 		log.Printf("server start: %v", err)
 		os.Exit(1)
@@ -54,6 +60,20 @@ func (s *server) Start() {
 func (s *server) Stop() {
 	s.stopFunc()
 	s.wg.Wait()
+}
+
+func (s *server) saveMetric(metricType, metricName, metricValue string) error {
+	err := s.storage.Save(metricType, metricName, metricValue)
+	return err
+}
+
+func (s *server) getMetricValue(metricType, metricName string) (interface{}, error) {
+	val, err := s.storage.GetMetricValue(metricType, metricName)
+	return val, err
+}
+
+func (s *server) getMetrics() map[string]map[string]interface{} {
+	return s.storage.GetMetrics()
 }
 
 func NewServerConfig(addr, port string) *serverConfig {
