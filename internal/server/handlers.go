@@ -1,6 +1,7 @@
 package server
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -9,20 +10,12 @@ import (
 	"net/http"
 )
 
-var indexTmpl = `
-<!DOCTYPE html>
-<html>
-    <head>
-    <title>YaMetrics</title>
-    </head>
-    <body>
-		{{range $mtype, $metrics := .}}
-		{{range $mname, $mvalue := $metrics}}
-		<p>{{$mname}}: {{$mvalue}}</p>
-		{{end}}
-		{{end}}
-    </body>
-</html>`
+//go:embed templates/index.gohtml
+var templatesFS embed.FS
+
+var templateFiles = map[string]string{
+	"/": "templates/index.gohtml",
+}
 
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
@@ -63,10 +56,23 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) Index(w http.ResponseWriter, r *http.Request) {
+	templatePattern, ok := templateFiles[r.URL.Path]
 
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	metrics := s.getMetrics()
-	tmpl := template.Must(template.New("metrics").Parse(indexTmpl))
-	err := tmpl.Execute(w, metrics)
+
+	tmpl, err := template.ParseFS(templatesFS, templatePattern)
+
+	if err != nil {
+		log.Printf("parsing template error: %v", err)
+		w.WriteHeader(http.StatusNotImplemented)
+		return
+	}
+
+	err = tmpl.Execute(w, metrics)
 
 	if err != nil {
 		log.Printf("index error: %v", err)
