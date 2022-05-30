@@ -15,10 +15,9 @@ import (
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
 	url := fmt.Sprintf("%s%s", ts.URL, path)
-	req, err := http.NewRequest(method, url, nil)
-	require.NoError(t, err)
-
-	resp, err := http.DefaultClient.Do(req)
+	req := httptest.NewRequest(method, url, nil)
+	req.RequestURI = ""
+	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
 
 	respBody, err := ioutil.ReadAll(resp.Body)
