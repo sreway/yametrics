@@ -15,9 +15,8 @@ import (
 
 type Agent interface {
 	Start()
-	Stop(wg *sync.WaitGroup)
-	Collect(wg *sync.WaitGroup)
-	Send(wg *sync.WaitGroup)
+	Collect(ctx context.Context, wg *sync.WaitGroup)
+	Send(ctx context.Context, wg *sync.WaitGroup)
 }
 
 type agentConfig struct {
@@ -45,13 +44,11 @@ func NewAgentConfig(poolInterval, reportInterval time.Duration, serverAddr strin
 
 type agent struct {
 	collector  Collector
-	ctx        context.Context
-	stopFunc   context.CancelFunc
 	httpClient http.Client
 	Config     *agentConfig
 }
 
-func (a *agent) Collect(wg *sync.WaitGroup) {
+func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.pollInterval)
@@ -60,13 +57,13 @@ func (a *agent) Collect(wg *sync.WaitGroup) {
 		select {
 		case <-tick.C:
 			a.collector.CollectMetrics()
-		case <-a.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (a *agent) Send(wg *sync.WaitGroup) {
+func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.reportInterval)
@@ -84,20 +81,22 @@ func (a *agent) Send(wg *sync.WaitGroup) {
 				a.collector.ClearPollCounter()
 			}
 
-		case <-a.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
 func (a *agent) Start() {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	systemSignals := make(chan os.Signal)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 	wg := new(sync.WaitGroup)
 
-	go a.Collect(wg)
-	go a.Send(wg)
+	go a.Collect(ctx, wg)
+	go a.Send(ctx, wg)
 	go func() {
 		for {
 			s := <-systemSignals
@@ -117,22 +116,16 @@ func (a *agent) Start() {
 			}
 		}
 	}()
+
 	exitCode := <-exitChan
-	a.Stop(wg)
+	cancel()
+	wg.Wait()
 	os.Exit(exitCode)
 }
 
-func (a *agent) Stop(wg *sync.WaitGroup) {
-	a.stopFunc()
-	wg.Wait()
-}
-
 func NewAgent(config *agentConfig) Agent {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &agent{
 		collector:  NewCollector(),
-		ctx:        ctx,
-		stopFunc:   cancel,
 		Config:     config,
 		httpClient: http.Client{},
 	}
