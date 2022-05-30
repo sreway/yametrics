@@ -7,12 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 )
 
 type Server interface {
 	Start()
-	Stop()
 }
 
 type server struct {
@@ -20,7 +18,6 @@ type server struct {
 	storage    Storage
 	ctx        context.Context
 	stopFunc   context.CancelFunc
-	wg         *sync.WaitGroup
 }
 
 type serverConfig struct {
@@ -29,18 +26,16 @@ type serverConfig struct {
 }
 
 func NewServer(config *serverConfig) Server {
-	wg := &sync.WaitGroup{}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &server{
 		&http.Server{
 			Addr: fmt.Sprintf("%s:%s", config.address, config.port),
 		},
-
 		NewStorage(),
 		ctx,
 		cancel,
-		wg,
 	}
 }
 
@@ -55,11 +50,6 @@ func (s *server) Start() {
 		log.Printf("server start: %v", err)
 		os.Exit(1)
 	}
-}
-
-func (s *server) Stop() {
-	s.stopFunc()
-	s.wg.Wait()
 }
 
 func (s *server) saveMetric(metricType, metricName, metricValue string) error {

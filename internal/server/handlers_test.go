@@ -95,7 +95,6 @@ func Test_server_UpdateMetric(t *testing.T) {
 		NewStorage(),
 		nil,
 		nil,
-		nil,
 	}
 
 	for _, tt := range tests {
@@ -247,7 +246,6 @@ func Test_server_MetricValue(t *testing.T) {
 				&s,
 				nil,
 				nil,
-				nil,
 			}
 
 			r := chi.NewRouter()
@@ -259,7 +257,7 @@ func Test_server_MetricValue(t *testing.T) {
 			resp, _ := testRequest(t, ts, tt.method, path)
 
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-			
+
 			// need for static tests
 			err := resp.Body.Close()
 
