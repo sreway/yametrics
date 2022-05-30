@@ -22,12 +22,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-
 	err = resp.Body.Close()
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	return resp, string(respBody)
 }
@@ -102,12 +98,6 @@ func Test_server_UpdateMetric(t *testing.T) {
 			defer ts.Close()
 			resp, _ := testRequest(t, ts, tt.method, tt.path)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-			// need for static tests
-			err := resp.Body.Close()
-
-			if err != nil {
-				t.Fatal(err)
-			}
 		})
 	}
 
@@ -250,15 +240,7 @@ func Test_server_MetricValue(t *testing.T) {
 
 			path := fmt.Sprintf("/value/%s/%s", tt.fields.metricType, tt.fields.metricName)
 			resp, _ := testRequest(t, ts, tt.method, path)
-
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-
-			// need for static tests
-			err := resp.Body.Close()
-
-			if err != nil {
-				t.Fatal(err)
-			}
 		})
 	}
 }
