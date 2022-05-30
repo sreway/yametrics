@@ -86,7 +86,6 @@ func Test_agent_SendToSever(t *testing.T) {
 				collector:  nil,
 				ctx:        nil,
 				stopFunc:   nil,
-				wg:         nil,
 				httpClient: *client,
 				Config:     NewTestAgentConfig(),
 			}

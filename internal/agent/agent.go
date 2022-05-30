@@ -15,9 +15,9 @@ import (
 
 type Agent interface {
 	Start()
-	Stop()
-	Collect()
-	Send()
+	Stop(wg *sync.WaitGroup)
+	Collect(wg *sync.WaitGroup)
+	Send(wg *sync.WaitGroup)
 }
 
 type agentConfig struct {
@@ -47,14 +47,13 @@ type agent struct {
 	collector  Collector
 	ctx        context.Context
 	stopFunc   context.CancelFunc
-	wg         *sync.WaitGroup
 	httpClient http.Client
 	Config     *agentConfig
 }
 
-func (a *agent) Collect() {
-	a.wg.Add(1)
-	defer a.wg.Done()
+func (a *agent) Collect(wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
 	tick := time.NewTicker(a.Config.pollInterval)
 	defer tick.Stop()
 	for {
@@ -67,9 +66,9 @@ func (a *agent) Collect() {
 	}
 }
 
-func (a *agent) Send() {
-	a.wg.Add(1)
-	defer a.wg.Done()
+func (a *agent) Send(wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
 	tick := time.NewTicker(a.Config.reportInterval)
 	defer tick.Stop()
 
@@ -95,8 +94,10 @@ func (a *agent) Start() {
 	systemSignals := make(chan os.Signal)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
-	go a.Collect()
-	go a.Send()
+	wg := new(sync.WaitGroup)
+
+	go a.Collect(wg)
+	go a.Send(wg)
 	go func() {
 		for {
 			s := <-systemSignals
@@ -117,23 +118,21 @@ func (a *agent) Start() {
 		}
 	}()
 	exitCode := <-exitChan
-	a.Stop()
+	a.Stop(wg)
 	os.Exit(exitCode)
 }
 
-func (a *agent) Stop() {
+func (a *agent) Stop(wg *sync.WaitGroup) {
 	a.stopFunc()
-	a.wg.Wait()
+	wg.Wait()
 }
 
 func NewAgent(config *agentConfig) Agent {
-	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	return &agent{
 		collector:  NewCollector(),
 		ctx:        ctx,
 		stopFunc:   cancel,
-		wg:         wg,
 		Config:     config,
 		httpClient: http.Client{},
 	}
