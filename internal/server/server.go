@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -16,8 +15,6 @@ type Server interface {
 type server struct {
 	httpServer *http.Server
 	storage    Storage
-	ctx        context.Context
-	stopFunc   context.CancelFunc
 }
 
 type serverConfig struct {
@@ -26,16 +23,11 @@ type serverConfig struct {
 }
 
 func NewServer(config *serverConfig) Server {
-
-	ctx, cancel := context.WithCancel(context.Background())
-
 	return &server{
 		&http.Server{
 			Addr: fmt.Sprintf("%s:%s", config.address, config.port),
 		},
 		NewStorage(),
-		ctx,
-		cancel,
 	}
 }
 
