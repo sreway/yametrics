@@ -98,6 +98,8 @@ func Test_server_UpdateMetric(t *testing.T) {
 			defer ts.Close()
 			resp, _ := testRequest(t, ts, tt.method, tt.path)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			err := resp.Body.Close()
+			require.NoError(t, err)
 		})
 	}
 
@@ -241,6 +243,8 @@ func Test_server_MetricValue(t *testing.T) {
 			path := fmt.Sprintf("/value/%s/%s", tt.fields.metricType, tt.fields.metricName)
 			resp, _ := testRequest(t, ts, tt.method, path)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			err := resp.Body.Close()
+			require.NoError(t, err)
 		})
 	}
 }
