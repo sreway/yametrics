@@ -17,18 +17,22 @@ type server struct {
 	storage    Storage
 }
 
-type serverConfig struct {
-	address string
-	port    string
-}
+func NewServer(opts ...OptionServer) (Server, error) {
+	srvCfg := newServerConfig()
 
-func NewServer(config *serverConfig) Server {
+	for _, opt := range opts {
+		err := opt(srvCfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &server{
 		&http.Server{
-			Addr: fmt.Sprintf("%s:%s", config.address, config.port),
+			Addr: fmt.Sprintf("%s:%s", srvCfg.address, srvCfg.port),
 		},
 		NewStorage(),
-	}
+	}, nil
 }
 
 func (s *server) Start() {
@@ -56,11 +60,4 @@ func (s *server) getMetricValue(metricType, metricName string) (interface{}, err
 
 func (s *server) getMetrics() map[string]map[string]interface{} {
 	return s.storage.GetMetrics()
-}
-
-func NewServerConfig(addr, port string) *serverConfig {
-	return &serverConfig{
-		address: addr,
-		port:    port,
-	}
 }

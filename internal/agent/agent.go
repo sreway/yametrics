@@ -19,29 +19,6 @@ type Agent interface {
 	Send(ctx context.Context, wg *sync.WaitGroup)
 }
 
-type agentConfig struct {
-	pollInterval      time.Duration
-	reportInterval    time.Duration
-	serverAddr        string
-	serverPort        string
-	serverScheme      string
-	serverContentType string
-	serverURL         string
-}
-
-func NewAgentConfig(poolInterval, reportInterval time.Duration, serverAddr string,
-	serverPort string, serverScheme string, serverContetType string) *agentConfig {
-	return &agentConfig{
-		pollInterval:      poolInterval,
-		reportInterval:    reportInterval,
-		serverAddr:        serverAddr,
-		serverPort:        serverPort,
-		serverScheme:      serverScheme,
-		serverContentType: serverContetType,
-		serverURL:         fmt.Sprintf("%s://%s:%s", serverScheme, serverAddr, serverPort),
-	}
-}
-
 type agent struct {
 	collector  Collector
 	httpClient http.Client
@@ -123,12 +100,21 @@ func (a *agent) Start() {
 	os.Exit(exitCode)
 }
 
-func NewAgent(config *agentConfig) Agent {
+func NewAgent(opts ...OptionAgent) (Agent, error) {
+	agentCfg := newAgentConfig()
+
+	for _, opt := range opts {
+		err := opt(agentCfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &agent{
 		collector:  NewCollector(),
-		Config:     config,
+		Config:     agentCfg,
 		httpClient: http.Client{},
-	}
+	}, nil
 }
 
 func (a *agent) SendToSever(metrics []ExposeMetric) error {
@@ -142,7 +128,7 @@ func (a *agent) SendToSever(metrics []ExposeMetric) error {
 			return fmt.Errorf("failed create request: %v", err)
 		}
 
-		request.Header.Add("Content-Type", a.Config.serverContentType)
+		request.Header.Add("Content-Type", "text/plain")
 
 		response, err := a.httpClient.Do(request)
 

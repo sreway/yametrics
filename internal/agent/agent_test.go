@@ -22,12 +22,11 @@ func NewTestHTTPClient(fn RoundTripFunc) *http.Client {
 
 func NewTestAgentConfig() *agentConfig {
 	return &agentConfig{
-		pollInterval:      0,
-		reportInterval:    0,
-		serverAddr:        "127.0.0.1",
-		serverPort:        "8080",
-		serverScheme:      "http",
-		serverContentType: "text/plain",
+		pollInterval:   0,
+		reportInterval: 0,
+		serverAddr:     "127.0.0.1",
+		serverPort:     "8080",
+		serverScheme:   "http",
 	}
 }
 
