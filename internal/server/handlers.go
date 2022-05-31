@@ -3,6 +3,7 @@ package server
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"html/template"
@@ -30,10 +31,11 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("storage save: %v", err)
 		resp["error"] = "Can't save metric"
-		switch err {
-		case ErrInvalidMetricType:
+
+		switch {
+		case errors.Is(err, ErrInvalidMetricType):
 			w.WriteHeader(http.StatusNotImplemented)
-		case ErrInvalidMetricValue:
+		case errors.Is(err, ErrInvalidMetricValue):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
@@ -88,16 +90,17 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	val, err := s.getMetricValue(metricType, metricName)
 
 	if err != nil {
-		switch err {
-		case ErrInvalidMetricValue:
+		switch {
+		case errors.Is(err, ErrInvalidMetricValue):
 			w.WriteHeader(http.StatusBadRequest)
-		case ErrNotFoundMetric:
+		case errors.Is(err, ErrNotFoundMetric):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
 			log.Printf("get metric value: %v", err)
 		}
 	}
+
 	_, err = w.Write([]byte(fmt.Sprintf("%v", val)))
 
 	if err != nil {

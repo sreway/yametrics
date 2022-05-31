@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"github.com/sreway/yametrics/internal/metrics"
 	"sync"
 )
@@ -32,7 +33,7 @@ func (s *storage) Save(metricType, metricName, metricValue string) error {
 		metricCounterValue, err := metrics.ParseCounter(metricValue)
 
 		if err != nil {
-			return ErrInvalidMetricValue
+			return fmt.Errorf("%s: %w", metricValue, ErrInvalidMetricValue)
 		}
 
 		currentCounterValue, exist := s.metrics["counter"][metricName]
@@ -47,13 +48,13 @@ func (s *storage) Save(metricType, metricName, metricValue string) error {
 		metricGaugeValue, err := metrics.ParseGause(metricValue)
 
 		if err != nil {
-			return ErrInvalidMetricValue
+			return fmt.Errorf("%s: %w", metricValue, ErrInvalidMetricValue)
 		}
 
 		s.metrics["gauge"][metricName] = metricGaugeValue
 
 	default:
-		return ErrInvalidMetricType
+		return fmt.Errorf("%s: %w", metricType, ErrInvalidMetricType)
 	}
 
 	return nil
@@ -69,10 +70,10 @@ func (s *storage) GetMetricValue(metricType, metricName string) (interface{}, er
 		if exist {
 			return metricValue, nil
 		} else {
-			return nil, ErrNotFoundMetric
+			return nil, fmt.Errorf("%s: %w", metricName, ErrNotFoundMetric)
 		}
 	default:
-		return nil, ErrInvalidMetricType
+		return nil, fmt.Errorf("%s: %w", metricType, ErrInvalidMetricType)
 	}
 }
 
