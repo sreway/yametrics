@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YaMetrics</title>
+</head>
+<body>
+{{range $mtype, $metrics := .}}
+    {{range $mname, $mvalue := $metrics}}
+        <p>{{$mname}}: {{$mvalue}}</p>
+    {{end}}
+{{end}}
+</body>
+</html>
