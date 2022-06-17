@@ -8,19 +8,13 @@ import (
 
 type Collector interface {
 	CollectMetrics()
-	ExposeMetrics() []ExposeMetric
+	ExposeMetrics() []metrics.Metrics
 	ClearPollCounter()
 }
 
 type collector struct {
-	metrics *metrics.Metrics
+	metrics *metrics.RuntimeMetrics
 	mu      sync.RWMutex
-}
-
-type ExposeMetric struct {
-	ID    string
-	Type  string
-	Value interface{}
 }
 
 func (c *collector) CollectMetrics() {
@@ -29,19 +23,29 @@ func (c *collector) CollectMetrics() {
 	c.metrics.Collect()
 }
 
-func (c *collector) ExposeMetrics() []ExposeMetric {
+func (c *collector) ExposeMetrics() []metrics.Metrics {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	metricsElements := reflect.ValueOf(c.metrics).Elem()
-	exposeMetrics := make([]ExposeMetric, 0, metricsElements.NumField())
+	exposeMetrics := make([]metrics.Metrics, 0, metricsElements.NumField())
 
 	for i := 0; i < metricsElements.NumField(); i++ {
-		exposeMetrics = append(exposeMetrics, ExposeMetric{
-			ID:    metricsElements.Type().Field(i).Name,
-			Value: metricsElements.Field(i).Interface(),
-			Type:  metricsElements.Field(i).Type().Name(),
-		})
+		exposeMetric := metrics.Metrics{
+			ID: metricsElements.Type().Field(i).Name,
+		}
+		switch metricsElements.Field(i).Type().Name() {
+		case "Gauge":
+			metricValue := metricsElements.Field(i).Interface().(metrics.Gauge).ToFloat64()
+			exposeMetric.MType = "gauge"
+			exposeMetric.Value = &metricValue
+		case "Counter":
+			metricValue := metricsElements.Field(i).Interface().(metrics.Counter).ToInt64()
+			exposeMetric.MType = "counter"
+			exposeMetric.Delta = &metricValue
+		}
+
+		exposeMetrics = append(exposeMetrics, exposeMetric)
 	}
 
 	return exposeMetrics
@@ -55,7 +59,7 @@ func (c *collector) ClearPollCounter() {
 
 func NewCollector() Collector {
 	return &collector{
-		new(metrics.Metrics),
+		new(metrics.RuntimeMetrics),
 		sync.RWMutex{},
 	}
 }

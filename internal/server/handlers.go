@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/sreway/yametrics/internal/metrics"
 	"html/template"
 	"log"
 	"net/http"
@@ -91,6 +92,8 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		switch {
+		case errors.Is(err, ErrInvalidMetricType):
+			w.WriteHeader(http.StatusNotImplemented)
 		case errors.Is(err, ErrInvalidMetricValue):
 			w.WriteHeader(http.StatusBadRequest)
 		case errors.Is(err, ErrNotFoundMetric):
@@ -107,4 +110,105 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		log.Printf("get metric value: error write bytes response: %v", err)
 	}
+}
+
+func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
+	var (
+		m      metrics.Metrics
+		mValue string
+	)
+
+	w.Header().Set("content-type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&m); err != nil {
+		log.Printf("can't decode body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	switch m.MType {
+
+	case "counter":
+		if m.Delta == nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		mValue = fmt.Sprintf("%v", *m.Delta)
+
+	case "gauge":
+		if m.Value == nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		mValue = fmt.Sprintf("%v", *m.Value)
+	default:
+		w.WriteHeader(http.StatusNotImplemented)
+		return
+	}
+
+	err := s.saveMetric(m.MType, m.ID, mValue)
+
+	if err != nil {
+		log.Printf("storage save: %v", err)
+		switch {
+		case errors.Is(err, ErrInvalidMetricType):
+			w.WriteHeader(http.StatusNotImplemented)
+		case errors.Is(err, ErrInvalidMetricValue):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(&m); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("failed encode metric: %v", err)
+		return
+	}
+}
+
+func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
+	var m metrics.Metrics
+	w.Header().Set("content-type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&m); err != nil {
+		log.Printf("can't decode body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	mValue, err := s.getMetricValue(m.MType, m.ID)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrInvalidMetricValue):
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, ErrNotFoundMetric):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+			log.Printf("get metric value: %v", err)
+		}
+		return
+	}
+
+	switch m.MType {
+	case "counter":
+		v := mValue.(metrics.Counter).ToInt64()
+		m.Delta = &v
+	case "gauge":
+		v := mValue.(metrics.Gauge).ToFloat64()
+		m.Value = &v
+	}
+
+	if err := json.NewEncoder(w).Encode(&m); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("failed encode metric: %v", err)
+		return
+	}
+
 }

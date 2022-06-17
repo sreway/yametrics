@@ -163,13 +163,13 @@ jobs:
 ## Перевести Агента на новое API
 ## Тесты проверяют, что агент экспортирует и обновляет метрики на сервере, описанные в первом инкременте.
 #
-#      - name: "Code increment #4"
-#        if: always()
-#        run: |
-#          devopstest -test.v -test.run=^TestIteration4$ \
-#            -source-path=. \
-#            -binary-path=cmd/server/server \
-#            -agent-binary-path=cmd/agent/agent
+      - name: "Code increment #4"
+        if: always()
+        run: |
+          devopstest -test.v -test.run=^TestIteration4$ \
+            -source-path=. \
+            -binary-path=cmd/server/server \
+            -agent-binary-path=cmd/agent/agent
 #
 ## V. Задание к пятому инкременту.
 ## Доработать агента, что бы он мог изменять свои параметры запуска по умолчанию, через переменные окружения:

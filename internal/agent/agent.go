@@ -1,13 +1,15 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -117,18 +119,24 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
-func (a *agent) SendToSever(metrics []ExposeMetric) error {
+func (a *agent) SendToSever(metrics []metrics.Metrics) error {
 	for _, metric := range metrics {
-		metricURI := fmt.Sprintf("update/%s/%s/%v", strings.ToLower(metric.Type),
-			metric.ID, metric.Value)
-		endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, metricURI)
-		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+		var body bytes.Buffer
+
+		if err := json.NewEncoder(&body).Encode(&metric); err != nil {
+			return fmt.Errorf("failed encode metric: %v", err)
+		}
+
+		updateURI := "update/"
+		endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, updateURI)
+
+		request, err := http.NewRequest(http.MethodPost, endpoint, &body)
 
 		if err != nil {
 			return fmt.Errorf("failed create request: %v", err)
 		}
 
-		request.Header.Add("Content-Type", "text/plain")
+		request.Header.Add("Content-Type", "application/json")
 
 		response, err := a.httpClient.Do(request)
 

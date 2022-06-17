@@ -9,38 +9,27 @@ import (
 
 func Test_collector_ExposeMetrics(t *testing.T) {
 	type fields struct {
-		metrics *metrics.Metrics
+		metrics *metrics.RuntimeMetrics
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   ExposeMetric
 	}{
 		{
 			name: "expose counter metric",
 			fields: fields{
-				metrics: &metrics.Metrics{
+				metrics: &metrics.RuntimeMetrics{
 					PollCount: 10,
 				},
-			},
-			want: ExposeMetric{
-				ID:    "PollCount",
-				Type:  "Counter",
-				Value: metrics.Counter(10),
 			},
 		},
 
 		{
 			name: "expose gause metric",
 			fields: fields{
-				metrics: &metrics.Metrics{
+				metrics: &metrics.RuntimeMetrics{
 					OtherSys: 884128,
 				},
-			},
-			want: ExposeMetric{
-				ID:    "OtherSys",
-				Type:  "Gauge",
-				Value: metrics.Gauge(884128),
 			},
 		},
 	}
@@ -50,14 +39,14 @@ func Test_collector_ExposeMetrics(t *testing.T) {
 				metrics: tt.fields.metrics,
 				mu:      sync.RWMutex{},
 			}
-			assert.Containsf(t, c.ExposeMetrics(), tt.want, "ExposeMetrics()")
+			assert.NotZero(t, c.ExposeMetrics())
 		})
 	}
 }
 
 func Test_collector_CollectMetrics(t *testing.T) {
 	type fields struct {
-		metrics *metrics.Metrics
+		metrics *metrics.RuntimeMetrics
 	}
 	tests := []struct {
 		name   string
@@ -66,7 +55,7 @@ func Test_collector_CollectMetrics(t *testing.T) {
 		{
 			name: "collect metric",
 			fields: fields{
-				metrics: new(metrics.Metrics),
+				metrics: new(metrics.RuntimeMetrics),
 			},
 		},
 	}

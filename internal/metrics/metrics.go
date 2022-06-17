@@ -8,42 +8,59 @@ import (
 	"strconv"
 )
 
-type Gauge float64
-type Counter int64
+type (
+	Gauge   float64
+	Counter int64
 
-type Metrics struct {
-	Alloc         Gauge
-	BuckHashSys   Gauge
-	Frees         Gauge
-	GCCPUFraction Gauge
-	GCSys         Gauge
-	HeapAlloc     Gauge
-	HeapIdle      Gauge
-	HeapInuse     Gauge
-	HeapObjects   Gauge
-	HeapReleased  Gauge
-	HeapSys       Gauge
-	LastGC        Gauge
-	Lookups       Gauge
-	MCacheInuse   Gauge
-	MCacheSys     Gauge
-	MSpanInuse    Gauge
-	MSpanSys      Gauge
-	Mallocs       Gauge
-	NextGC        Gauge
-	NumForcedGC   Gauge
-	NumGC         Gauge
-	OtherSys      Gauge
-	PauseTotalNs  Gauge
-	StackInuse    Gauge
-	StackSys      Gauge
-	Sys           Gauge
-	TotalAlloc    Gauge
-	PollCount     Counter
-	RandomValue   Gauge
+	RuntimeMetrics struct {
+		Alloc         Gauge
+		BuckHashSys   Gauge
+		Frees         Gauge
+		GCCPUFraction Gauge
+		GCSys         Gauge
+		HeapAlloc     Gauge
+		HeapIdle      Gauge
+		HeapInuse     Gauge
+		HeapObjects   Gauge
+		HeapReleased  Gauge
+		HeapSys       Gauge
+		LastGC        Gauge
+		Lookups       Gauge
+		MCacheInuse   Gauge
+		MCacheSys     Gauge
+		MSpanInuse    Gauge
+		MSpanSys      Gauge
+		Mallocs       Gauge
+		NextGC        Gauge
+		NumForcedGC   Gauge
+		NumGC         Gauge
+		OtherSys      Gauge
+		PauseTotalNs  Gauge
+		StackInuse    Gauge
+		StackSys      Gauge
+		Sys           Gauge
+		TotalAlloc    Gauge
+		PollCount     Counter
+		RandomValue   Gauge
+	}
+
+	Metrics struct {
+		ID    string   `json:"id"`
+		MType string   `json:"type"`
+		Delta *int64   `json:"delta,omitempty"`
+		Value *float64 `json:"value,omitempty"`
+	}
+)
+
+func (c Counter) ToInt64() int64 {
+	return int64(c)
 }
 
-func (m *Metrics) Collect() {
+func (g Gauge) ToFloat64() float64 {
+	return float64(g)
+}
+
+func (m *RuntimeMetrics) Collect() {
 	memStats := new(runtime.MemStats)
 	runtime.ReadMemStats(memStats)
 	memStatsElements := reflect.ValueOf(memStats).Elem()
