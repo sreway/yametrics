@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
@@ -18,8 +17,10 @@ type server struct {
 }
 
 func NewServer(opts ...OptionServer) (Server, error) {
-	srvCfg := newServerConfig()
-
+	srvCfg, err := newServerConfig()
+	if err != nil {
+		return nil, err
+	}
 	for _, opt := range opts {
 		err := opt(srvCfg)
 		if err != nil {
@@ -29,7 +30,7 @@ func NewServer(opts ...OptionServer) (Server, error) {
 
 	return &server{
 		&http.Server{
-			Addr: fmt.Sprintf("%s:%s", srvCfg.address, srvCfg.port),
+			Addr: srvCfg.Address,
 		},
 		NewStorage(),
 	}, nil

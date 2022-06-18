@@ -30,7 +30,7 @@ type agent struct {
 func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
-	tick := time.NewTicker(a.Config.pollInterval)
+	tick := time.NewTicker(a.Config.PollInterval)
 	defer tick.Stop()
 	for {
 		select {
@@ -45,7 +45,7 @@ func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
 func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
-	tick := time.NewTicker(a.Config.reportInterval)
+	tick := time.NewTicker(a.Config.ReportInterval)
 	defer tick.Stop()
 
 	for {
@@ -103,8 +103,10 @@ func (a *agent) Start() {
 }
 
 func NewAgent(opts ...OptionAgent) (Agent, error) {
-	agentCfg := newAgentConfig()
-
+	agentCfg, err := newAgentConfig()
+	if err != nil {
+		return nil, err
+	}
 	for _, opt := range opts {
 		err := opt(agentCfg)
 		if err != nil {
@@ -128,7 +130,7 @@ func (a *agent) SendToSever(metrics []metrics.Metrics) error {
 		}
 
 		updateURI := "update/"
-		endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, updateURI)
+		endpoint := fmt.Sprintf("http://%s/%s", a.Config.ServerAddress, updateURI)
 
 		request, err := http.NewRequest(http.MethodPost, endpoint, &body)
 

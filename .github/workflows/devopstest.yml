@@ -179,18 +179,18 @@ jobs:
 ## Значения интервалов времени должно задаваться в секундах.
 ## Доработать сервер, что бы он мог изменять свои параметры запуска по умолчанию, через переменные окружения:
 ##   ADDRESS (по умолчанию: "127.0.0.1:8080" или "localhost:8080")
-#
-#      - name: "Code increment #5"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          devopstest -test.v -test.run=^TestIteration5$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT
-#
+
+      - name: "Code increment #5"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          devopstest -test.v -test.run=^TestIteration5$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT
+
 ## VI. Задание к шестому инкременту.
 ## Доработать сервер, что бы он с заданной периодичностью сохранял текущие значения метрик на диск в указанный файл.
 ## На старте опционально мог загружать сохраненные ранее значения.

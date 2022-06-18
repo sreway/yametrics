@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -30,12 +31,13 @@ func TestWithPollInterval(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	cfg := newAgentConfig()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := newAgentConfig()
+			assert.NoError(t, err)
 			ops := WithPollInterval(tt.args.poolInterval)
-			err := ops(cfg)
+			err = ops(cfg)
 			if !tt.wantErr {
 				assert.NoError(t, err)
 			} else {
@@ -70,12 +72,13 @@ func TestWithReportInterval(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	cfg := newAgentConfig()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := newAgentConfig()
+			assert.NoError(t, err)
 			ops := WithReportInterval(tt.args.reportInterval)
-			err := ops(cfg)
+			err = ops(cfg)
 			if !tt.wantErr {
 				assert.NoError(t, err)
 			} else {
@@ -85,9 +88,10 @@ func TestWithReportInterval(t *testing.T) {
 	}
 }
 
-func TestWithServerAddr(t *testing.T) {
+func Test_newAgentConfig(t *testing.T) {
 	type args struct {
-		serverAddr string
+		envName  string
+		envValue string
 	}
 	tests := []struct {
 		name    string
@@ -95,115 +99,78 @@ func TestWithServerAddr(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid serverAddr",
+			name: "valid address",
 			args: args{
-				serverAddr: "127.0.0.1",
+				envName:  "ADDRESS",
+				envValue: "127.0.0.1:8080",
 			},
 			wantErr: false,
 		},
 
 		{
-			name: "invalid serverAddr",
+			name: "invalid address",
 			args: args{
-				serverAddr: "256.0.0.1",
+				envName:  "ADDRESS",
+				envValue: "invalid",
 			},
 			wantErr: true,
 		},
 
 		{
-			name: "nil serverAddr",
+			name: "invalid port",
 			args: args{
-				serverAddr: "",
+				envName:  "ADDRESS",
+				envValue: "127.0.0.1:invalid",
+			},
+			wantErr: true,
+		},
+
+		{
+			name: "valid poll interval",
+			args: args{
+				envName:  "POLL_INTERVAL",
+				envValue: "2s",
+			},
+			wantErr: false,
+		},
+
+		{
+			name: "invalid poll interval",
+			args: args{
+				envName:  "POLL_INTERVAL",
+				envValue: "invalid",
+			},
+			wantErr: true,
+		},
+
+		{
+			name: "valid report interval",
+			args: args{
+				envName:  "REPORT_INTERVAL",
+				envValue: "10s",
+			},
+			wantErr: false,
+		},
+
+		{
+			name: "invalid report interval",
+			args: args{
+				envName:  "REPORT_INTERVAL",
+				envValue: "invalid",
 			},
 			wantErr: true,
 		},
 	}
-	cfg := newAgentConfig()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ops := WithServerAddr(tt.args.serverAddr)
-			err := ops(cfg)
-			if !tt.wantErr {
+			err := os.Setenv(tt.args.envName, tt.args.envValue)
+			defer func() {
+				err := os.Unsetenv(tt.args.envName)
 				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-			}
-		})
-	}
-}
-
-func TestWithServerPort(t *testing.T) {
-	type args struct {
-		serverPort string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "valid serverPort",
-			args: args{
-				serverPort: "8080",
-			},
-			wantErr: false,
-		},
-
-		{
-			name: "invalid serverPort",
-			args: args{
-				serverPort: "invalid",
-			},
-			wantErr: true,
-		},
-	}
-	cfg := newAgentConfig()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ops := WithServerPort(tt.args.serverPort)
-			err := ops(cfg)
-			if !tt.wantErr {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-			}
-		})
-	}
-}
-
-func TestWithServerScheme(t *testing.T) {
-	type args struct {
-		serverScheme string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "valid serverScheme",
-			args: args{
-				serverScheme: "https",
-			},
-			wantErr: false,
-		},
-
-		{
-			name: "invalid serverScheme",
-			args: args{
-				serverScheme: "invalid",
-			},
-			wantErr: true,
-		},
-	}
-	cfg := newAgentConfig()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ops := WithServerScheme(tt.args.serverScheme)
-			err := ops(cfg)
+			}()
+			assert.NoError(t, err)
+			_, err = newAgentConfig()
 			if !tt.wantErr {
 				assert.NoError(t, err)
 			} else {
