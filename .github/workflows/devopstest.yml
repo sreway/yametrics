@@ -199,21 +199,21 @@ jobs:
 ##   STORE_INTERVAL (по умолчанию 300) - интервал времени в секундах, по истечении которого текущие показания сервера сбрасываются на диск. (значение 0 - делает запись синхронной)
 ##   STORE_FILE по умолчанию ("/tmp/devops-metrics-db.json") - строка - имя файла, где хранятся значения (пустое значение - отключает функцию записи на диск)
 ##   RESTORE по умолчанию (true) - булево значение (true|false), определяющее загружать или нет начальные значения из указанного файла при старте сервера.
-#
-#      - name: "Code increment #6"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration6$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -file-storage-path=$TEMP_FILE
-#
+
+      - name: "Code increment #6"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration6$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -file-storage-path=$TEMP_FILE
+
 ## VII. Задание к седьмому инкременту.
 ## Доработать код, что бы он умел принимать аргументы с использованием флагов.
 ## * Аргументы Сервера

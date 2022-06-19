@@ -90,6 +90,7 @@ func Test_server_UpdateMetric(t *testing.T) {
 	s := &server{
 		nil,
 		NewStorage(),
+		nil,
 	}
 
 	for _, tt := range tests {
@@ -235,6 +236,7 @@ func Test_server_MetricValue(t *testing.T) {
 			srv := &server{
 				nil,
 				&s,
+				nil,
 			}
 
 			r := chi.NewRouter()
@@ -319,6 +321,7 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 	srv := &server{
 		nil,
 		NewStorage(),
+		nil,
 	}
 
 	r := chi.NewRouter()
@@ -428,6 +431,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 	srv := &server{
 		nil,
 		NewStorage(),
+		nil,
 	}
 
 	r := chi.NewRouter()
@@ -456,6 +460,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 		srv := &server{
 			nil,
 			&s,
+			nil,
 		}
 
 		r := chi.NewRouter()
