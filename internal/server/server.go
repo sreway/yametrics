@@ -127,7 +127,10 @@ func (s *server) storeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-tick.C:
-			_ = s.storage.StoreMetrics(s.cfg.StoreFile)
+			err := s.storage.StoreMetrics(s.cfg.StoreFile)
+			if err != nil {
+				log.Println(err)
+			}
 		case <-ctx.Done():
 			return
 		}
