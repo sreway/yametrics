@@ -11,20 +11,28 @@ import (
 
 type (
 	agentConfig struct {
-		PollInterval   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
-		ReportInterval time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-		ServerAddress  string        `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
+		PollInterval   time.Duration `env:"POLL_INTERVAL"`
+		ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+		ServerAddress  string        `env:"ADDRESS"`
 	}
 	OptionAgent func(*agentConfig) error
 )
 
 var (
-	ErrInvalidConfigOps = errors.New("invalid configuration option")
-	ErrInvalidConfig    = errors.New("invalid configuration")
+	ServerAddressDefault  = "127.0.0.1:8080"
+	ReportIntervalDefault = 10 * time.Second
+	PollIntervalDefault   = 2 * time.Second
+	ErrInvalidConfigOps   = errors.New("invalid configuration option")
+	ErrInvalidConfig      = errors.New("invalid configuration")
 )
 
 func newAgentConfig() (*agentConfig, error) {
-	cfg := agentConfig{}
+	cfg := agentConfig{
+		ServerAddress:  ServerAddressDefault,
+		ReportInterval: ReportIntervalDefault,
+		PollInterval:   PollIntervalDefault,
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %v", err)
 	}

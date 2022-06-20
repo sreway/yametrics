@@ -11,21 +11,31 @@ import (
 
 type (
 	serverConfig struct {
-		Address       string        `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
-		StoreInterval time.Duration `env:"STORE_INTERVAL" envDefault:"300s"`
-		StoreFile     string        `env:"STORE_FILE" envDefault:"/tmp/devops-metrics-db.json"`
-		Restore       bool          `env:"RESTORE" envDefault:"true"`
+		Address       string        `env:"ADDRESS"`
+		StoreInterval time.Duration `env:"STORE_INTERVAL"`
+		StoreFile     string        `env:"STORE_FILE"`
+		Restore       bool          `env:"RESTORE"`
 	}
 	OptionServer func(*serverConfig) error
 )
 
 var (
-	ErrInvalidConfigOps = errors.New("invalid configuration option")
-	ErrInvalidConfig    = errors.New("invalid configuration")
+	AddressDefault       = "127.0.0.1:8080"
+	StoreIntervalDefault = 300 * time.Second
+	RestoreDefault       = true
+	StoreFileDefault     = "/tmp/devops-metrics-db.json"
+	ErrInvalidConfigOps  = errors.New("invalid configuration option")
+	ErrInvalidConfig     = errors.New("invalid configuration")
 )
 
 func newServerConfig() (*serverConfig, error) {
-	cfg := serverConfig{}
+	cfg := serverConfig{
+		Address:       AddressDefault,
+		StoreInterval: StoreIntervalDefault,
+		Restore:       RestoreDefault,
+		StoreFile:     StoreFileDefault,
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("newServerConfig: %v", err)
 	}

@@ -225,22 +225,22 @@ jobs:
 ##    ADDRESS, через флаг: "-a=<ЗНАЧЕНИЕ>"
 ##    REPORT_INTERVAL, через флаг: "-r=<ЗНАЧЕНИЕ>"
 ##    POLL_INTERVAL, через флаг: "-p=<ЗНАЧЕНИЕ>"
-## Во всех случаях иметь значения по умолчанию и реализовать приоритет значений полученных через ENV, перед значениями задаваемые посредством флагов.
-#
-#      - name: "Code increment #7"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration7$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -file-storage-path=$TEMP_FILE
-#
+# Во всех случаях иметь значения по умолчанию и реализовать приоритет значений полученных через ENV, перед значениями задаваемые посредством флагов.
+
+      - name: "Code increment #7"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration7$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -file-storage-path=$TEMP_FILE
+
 ## VIII. Задание к восьмому инкременту.
 ## Доработать код сервера, для реализации механизма cжатия данных сервером в формате gzip
 ## для контента с типом: application/json и text/html
