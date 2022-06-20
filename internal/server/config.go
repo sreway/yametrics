@@ -15,6 +15,8 @@ type (
 		StoreInterval time.Duration `env:"STORE_INTERVAL"`
 		StoreFile     string        `env:"STORE_FILE"`
 		Restore       bool          `env:"RESTORE"`
+		compressLevel int
+		compressTypes []string
 	}
 	OptionServer func(*serverConfig) error
 )
@@ -24,8 +26,14 @@ var (
 	StoreIntervalDefault = 300 * time.Second
 	RestoreDefault       = true
 	StoreFileDefault     = "/tmp/devops-metrics-db.json"
-	ErrInvalidConfigOps  = errors.New("invalid configuration option")
-	ErrInvalidConfig     = errors.New("invalid configuration")
+	CompressLevelDefault = 5
+	CompressTypesDefault = []string{
+		"text/html",
+		"text/plain",
+		"application/json",
+	}
+	ErrInvalidConfigOps = errors.New("invalid configuration option")
+	ErrInvalidConfig    = errors.New("invalid configuration")
 )
 
 func newServerConfig() (*serverConfig, error) {
@@ -34,6 +42,8 @@ func newServerConfig() (*serverConfig, error) {
 		StoreInterval: StoreIntervalDefault,
 		Restore:       RestoreDefault,
 		StoreFile:     StoreFileDefault,
+		compressLevel: CompressLevelDefault,
+		compressTypes: CompressTypesDefault,
 	}
 
 	if err := env.Parse(&cfg); err != nil {

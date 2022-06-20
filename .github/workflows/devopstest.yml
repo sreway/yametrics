@@ -245,19 +245,19 @@ jobs:
 ## Доработать код сервера, для реализации механизма cжатия данных сервером в формате gzip
 ## для контента с типом: application/json и text/html
 #
-#      - name: "Code increment #8"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration8 \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -file-storage-path=$TEMP_FILE
+      - name: "Code increment #8"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration8 \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -file-storage-path=$TEMP_FILE
 #
 ## IX. Задание к девятому инкременту.
 ## Внимание: это учебный пример, в котором сделан акцент на закреплении пройденной темы,

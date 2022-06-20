@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -63,6 +64,7 @@ func (s *server) Start() {
 
 	go func() {
 		r := chi.NewRouter()
+		r.Use(middleware.Compress(s.cfg.compressLevel, s.cfg.compressTypes...))
 		s.initRoutes(r)
 		s.httpServer.Handler = r
 		err := s.httpServer.ListenAndServe()

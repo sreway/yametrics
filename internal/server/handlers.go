@@ -59,6 +59,7 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) Index(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "text/html")
 	templatePattern, ok := templateFiles[r.URL.Path]
 
 	if !ok {
