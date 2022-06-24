@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -53,7 +52,6 @@ func (s *server) Start() {
 	systemSignals := make(chan os.Signal)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
-	wg := new(sync.WaitGroup)
 
 	if s.cfg.Restore {
 		err := s.loadMetrics()
@@ -63,7 +61,7 @@ func (s *server) Start() {
 	}
 
 	if s.cfg.StoreInterval != 0 {
-		go s.storeMetrics(ctx, wg)
+		go s.storeMetrics(ctx)
 	}
 
 	go func() {
@@ -95,7 +93,6 @@ func (s *server) Start() {
 
 	exitCode := <-exitChan
 	cancel()
-	wg.Wait()
 	os.Exit(exitCode)
 }
 
@@ -145,10 +142,7 @@ func (s *server) getMetrics() metrics.Metrics {
 	return s.storage.GetMetrics()
 }
 
-func (s *server) storeMetrics(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
-	defer wg.Done()
-
+func (s *server) storeMetrics(ctx context.Context) {
 	tick := time.NewTicker(s.cfg.StoreInterval)
 	defer tick.Stop()
 	for {
