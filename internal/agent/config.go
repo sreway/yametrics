@@ -14,6 +14,7 @@ type (
 		PollInterval   time.Duration `env:"POLL_INTERVAL"`
 		ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 		ServerAddress  string        `env:"ADDRESS"`
+		metricEndpoint string
 	}
 	OptionAgent func(*agentConfig) error
 )
@@ -32,7 +33,6 @@ func newAgentConfig() (*agentConfig, error) {
 		ReportInterval: ReportIntervalDefault,
 		PollInterval:   PollIntervalDefault,
 	}
-
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %v", err)
 	}
@@ -48,6 +48,7 @@ func newAgentConfig() (*agentConfig, error) {
 		return nil, fmt.Errorf("newAgentConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.ServerAddress)
 	}
 
+	cfg.metricEndpoint = fmt.Sprintf("http://%s/update/", cfg.ServerAddress)
 	return &cfg, nil
 }
 

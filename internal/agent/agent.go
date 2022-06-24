@@ -129,10 +129,7 @@ func (a *agent) SendToSever(metrics []metrics.Metric) error {
 			return fmt.Errorf("failed encode metric: %v", err)
 		}
 
-		updateURI := "update/"
-		endpoint := fmt.Sprintf("http://%s/%s", a.Config.ServerAddress, updateURI)
-
-		request, err := http.NewRequest(http.MethodPost, endpoint, &body)
+		request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
 
 		if err != nil {
 			return fmt.Errorf("failed create request: %v", err)
