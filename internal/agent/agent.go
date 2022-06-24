@@ -121,7 +121,7 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
-func (a *agent) SendToSever(metrics []metrics.Metrics) error {
+func (a *agent) SendToSever(metrics []metrics.Metric) error {
 	for _, metric := range metrics {
 		var body bytes.Buffer
 

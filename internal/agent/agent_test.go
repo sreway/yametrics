@@ -37,11 +37,11 @@ func FloatAsPointer(value float64) *float64 {
 func Test_agent_SendToSever(t *testing.T) {
 	tests := []struct {
 		name string
-		args []metrics.Metrics
+		args []metrics.Metric
 	}{
 		{
 			name: "send counter",
-			args: []metrics.Metrics{
+			args: []metrics.Metric{
 				{
 					ID:    "PollCounter",
 					MType: "counter",
@@ -52,7 +52,7 @@ func Test_agent_SendToSever(t *testing.T) {
 
 		{
 			name: "send gauge",
-			args: []metrics.Metrics{
+			args: []metrics.Metric{
 				{
 					ID:    "PollCounter",
 					MType: "counter",

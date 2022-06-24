@@ -8,7 +8,7 @@ import (
 
 type Collector interface {
 	CollectMetrics()
-	ExposeMetrics() []metrics.Metrics
+	ExposeMetrics() []metrics.Metric
 	ClearPollCounter()
 }
 
@@ -23,15 +23,15 @@ func (c *collector) CollectMetrics() {
 	c.metrics.Collect()
 }
 
-func (c *collector) ExposeMetrics() []metrics.Metrics {
+func (c *collector) ExposeMetrics() []metrics.Metric {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	metricsElements := reflect.ValueOf(c.metrics).Elem()
-	exposeMetrics := make([]metrics.Metrics, 0, metricsElements.NumField())
+	exposeMetrics := make([]metrics.Metric, 0, metricsElements.NumField())
 
 	for i := 0; i < metricsElements.NumField(); i++ {
-		exposeMetric := metrics.Metrics{
+		exposeMetric := metrics.Metric{
 			ID: metricsElements.Type().Field(i).Name,
 		}
 		switch metricsElements.Field(i).Type().Name() {

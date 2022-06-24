@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
 	"log"
 	"net/http"
 	"os"
@@ -19,7 +23,7 @@ type Server interface {
 
 type server struct {
 	httpServer *http.Server
-	storage    Storage
+	storage    storage.Storage
 	cfg        *serverConfig
 }
 
@@ -39,7 +43,7 @@ func NewServer(opts ...OptionServer) (Server, error) {
 		&http.Server{
 			Addr: srvCfg.Address,
 		},
-		NewStorage(),
+		storage.NewMemoryStorage(),
 		srvCfg,
 	}, nil
 }
@@ -103,20 +107,49 @@ func (s *server) Start() {
 	os.Exit(exitCode)
 }
 
-func (s *server) saveMetric(metricType, metricName, metricValue string) error {
-	err := s.storage.Save(metricType, metricName, metricValue)
+func (s *server) saveMetric(metric metrics.Metric) error {
+	switch metric.IsCounter() {
+	case true:
+		_, err := s.storage.GetMetric(metric.MType, metric.ID)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, storage.ErrNotFoundMetric):
+				err := s.storage.Save(metric)
+				if err != nil {
+					return fmt.Errorf("Server_saveMetric error:%w", err)
+				}
+				return nil
+			default:
+				return fmt.Errorf("Server_saveMetric error:%w", err)
+			}
+		}
+
+		s.storage.IncrementCounter(metric.ID, *metric.Delta)
+
+	default:
+		err := s.storage.Save(metric)
+		if err != nil {
+			return fmt.Errorf("Server_saveMetric error:%w", err)
+		}
+	}
+
 	if s.cfg != nil && s.cfg.StoreInterval == 0 {
 		_ = s.storage.StoreMetrics(s.cfg.StoreFile)
 	}
-	return err
+
+	return nil
 }
 
-func (s *server) getMetricValue(metricType, metricName string) (interface{}, error) {
-	val, err := s.storage.GetMetricValue(metricType, metricName)
-	return val, err
+func (s *server) getMetric(metricType, metricName string) (metrics.Metric, error) {
+	m, err := s.storage.GetMetric(metricType, metricName)
+	if err != nil {
+		return metrics.Metric{}, err
+	}
+	return *m, err
 }
 
-func (s *server) getMetrics() map[string]map[string]interface{} {
+func (s *server) getMetrics() metrics.Metrics {
 	return s.storage.GetMetrics()
 }
 

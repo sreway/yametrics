@@ -1,11 +1,17 @@
 package metrics
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
 	"runtime"
 	"strconv"
+)
+
+var (
+	ErrInvalidMetricValue = errors.New("invalid metric value")
+	ErrInvalidMetricType  = errors.New("invalid metric type")
 )
 
 type (
@@ -44,11 +50,16 @@ type (
 		RandomValue   Gauge
 	}
 
-	Metrics struct {
+	Metric struct {
 		ID    string   `json:"id"`
 		MType string   `json:"type"`
 		Delta *int64   `json:"delta,omitempty"`
 		Value *float64 `json:"value,omitempty"`
+	}
+
+	Metrics struct {
+		Counter map[string]Metric `json:"counter"`
+		Gauge   map[string]Metric `json:"gauge"`
 	}
 )
 
@@ -98,4 +109,61 @@ func ParseGause(s string) (Gauge, error) {
 	}
 
 	return Gauge(n), nil
+}
+
+func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
+	var metric Metric
+
+	metric.ID = metricID
+	metric.MType = metricType
+
+	switch metricType {
+	case "counter":
+		mValue, err := strconv.ParseInt(metricValue, 10, 64)
+
+		if err != nil {
+			return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricValue)
+		}
+		metric.Delta = &mValue
+		return metric, nil
+
+	case "gauge":
+		mValue, err := strconv.ParseFloat(metricValue, 64)
+
+		if err != nil {
+			return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricValue)
+		}
+		metric.Value = &mValue
+
+		return metric, nil
+
+	default:
+		return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricType)
+	}
+}
+
+func (m Metric) IsCounter() bool {
+	return m.MType == "counter"
+}
+
+func (m Metric) GetStrValue() string {
+	switch m.MType {
+	case "counter":
+		return fmt.Sprintf("%v", *m.Delta)
+	case "gauge":
+		return fmt.Sprintf("%v", *m.Value)
+	default:
+		return ""
+	}
+}
+
+func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
+	switch metricsType {
+	case "counter":
+		return m.Counter, nil
+	case "gauge":
+		return m.Gauge, nil
+	default:
+		return nil, fmt.Errorf("Metric_GetMetrics error: %w", ErrInvalidMetricType)
+	}
 }
