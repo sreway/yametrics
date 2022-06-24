@@ -21,7 +21,7 @@ var (
 )
 
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	metricType := chi.URLParam(r, "metricType")
 	metricName := chi.URLParam(r, "metricName")
 	metricValue := chi.URLParam(r, "metricValue")
@@ -58,7 +58,8 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) Index(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "text/html")
+	w.Header().Set("Content-Type", "text/html")
+
 	templatePattern, ok := templateFiles[r.URL.Path]
 
 	if !ok {
@@ -85,7 +86,7 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain")
 	metricName := chi.URLParam(r, "metricName")
 	metricType := chi.URLParam(r, "metricType")
 
@@ -114,7 +115,7 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
 
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
@@ -149,7 +150,7 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
-	w.Header().Set("content-type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
