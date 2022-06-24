@@ -82,17 +82,9 @@ func (s *server) Start() {
 		for {
 			systemSignal := <-systemSignals
 			switch systemSignal {
-			case syscall.SIGINT:
-				log.Println("signal interrupt triggered.")
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+				log.Println("signal triggered.")
 				_ = s.storage.StoreMetrics(s.cfg.StoreFile)
-				exitChan <- 0
-			case syscall.SIGTERM:
-				_ = s.storage.StoreMetrics(s.cfg.StoreFile)
-				log.Println("signal terminate triggered.")
-				exitChan <- 0
-			case syscall.SIGQUIT:
-				_ = s.storage.StoreMetrics(s.cfg.StoreFile)
-				log.Println("signal quit triggered.")
 				exitChan <- 0
 			default:
 				log.Println("unknown signal.")
