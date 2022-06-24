@@ -12,12 +12,13 @@ import (
 	"net/http"
 )
 
-//go:embed templates/index.gohtml
-var templatesFS embed.FS
-
-var templateFiles = map[string]string{
-	"/": "templates/index.gohtml",
-}
+var (
+	//go:embed templates/index.gohtml
+	templatesFS   embed.FS
+	templateFiles = map[string]string{
+		"/": "templates/index.gohtml",
+	}
+)
 
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
