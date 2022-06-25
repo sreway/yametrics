@@ -4,10 +4,11 @@
     <title>YaMetrics</title>
 </head>
 <body>
-{{range $mtype, $metrics := .}}
-    {{range $mname, $mvalue := $metrics}}
-        <p>{{$mname}}: {{$mvalue}}</p>
-    {{end}}
+{{range $mname, $mvalue := .Gauge}}
+    <p>{{$mname}}: {{$mvalue.Value}}</p>
+{{end}}
+{{range $mname, $mvalue := .Counter}}
+    <p>{{$mname}}: {{$mvalue.Delta}}</p>
 {{end}}
 </body>
 </html>

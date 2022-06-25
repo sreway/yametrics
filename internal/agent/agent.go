@@ -1,13 +1,15 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -28,7 +30,7 @@ type agent struct {
 func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
-	tick := time.NewTicker(a.Config.pollInterval)
+	tick := time.NewTicker(a.Config.PollInterval)
 	defer tick.Stop()
 	for {
 		select {
@@ -43,7 +45,7 @@ func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
 func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
-	tick := time.NewTicker(a.Config.reportInterval)
+	tick := time.NewTicker(a.Config.ReportInterval)
 	defer tick.Stop()
 
 	for {
@@ -101,8 +103,10 @@ func (a *agent) Start() {
 }
 
 func NewAgent(opts ...OptionAgent) (Agent, error) {
-	agentCfg := newAgentConfig()
-
+	agentCfg, err := newAgentConfig()
+	if err != nil {
+		return nil, err
+	}
 	for _, opt := range opts {
 		err := opt(agentCfg)
 		if err != nil {
@@ -117,18 +121,21 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
-func (a *agent) SendToSever(metrics []ExposeMetric) error {
+func (a *agent) SendToSever(metrics []metrics.Metric) error {
 	for _, metric := range metrics {
-		metricURI := fmt.Sprintf("update/%s/%s/%v", strings.ToLower(metric.Type),
-			metric.ID, metric.Value)
-		endpoint := fmt.Sprintf("%s/%s", a.Config.serverURL, metricURI)
-		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+		var body bytes.Buffer
+
+		if err := json.NewEncoder(&body).Encode(&metric); err != nil {
+			return fmt.Errorf("failed encode metric: %v", err)
+		}
+
+		request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
 
 		if err != nil {
 			return fmt.Errorf("failed create request: %v", err)
 		}
 
-		request.Header.Add("Content-Type", "text/plain")
+		request.Header.Add("Content-Type", "application/json")
 
 		response, err := a.httpClient.Do(request)
 

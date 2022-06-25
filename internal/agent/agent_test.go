@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -22,50 +21,43 @@ func NewTestHTTPClient(fn RoundTripFunc) *http.Client {
 
 func NewTestAgentConfig() *agentConfig {
 	return &agentConfig{
-		pollInterval:   0,
-		reportInterval: 0,
-		serverAddr:     "127.0.0.1",
-		serverPort:     "8080",
-		serverScheme:   "http",
+		PollInterval:   0,
+		ReportInterval: 0,
 	}
 }
 
-type want struct {
-	uri        string
-	statusCode int
+func IntAsPointer(value int64) *int64 {
+	return &value
+}
+
+func FloatAsPointer(value float64) *float64 {
+	return &value
 }
 
 func Test_agent_SendToSever(t *testing.T) {
 	tests := []struct {
 		name string
-		args []ExposeMetric
-		want want
+		args []metrics.Metric
 	}{
 		{
 			name: "send counter",
-			args: []ExposeMetric{
+			args: []metrics.Metric{
 				{
-					ID:    "PollCount",
-					Type:  "Counter",
-					Value: metrics.Counter(5),
+					ID:    "PollCounter",
+					MType: "counter",
+					Value: FloatAsPointer(10),
 				},
-			},
-			want: want{
-				uri: "/update/counter/PollCount/5",
 			},
 		},
 
 		{
 			name: "send gauge",
-			args: []ExposeMetric{
+			args: []metrics.Metric{
 				{
-					ID:    "OtherSys",
-					Type:  "Gauge",
-					Value: metrics.Gauge(884128),
+					ID:    "PollCounter",
+					MType: "counter",
+					Delta: IntAsPointer(2),
 				},
-			},
-			want: want{
-				uri: "/update/gauge/OtherSys/884128",
 			},
 		},
 	}
@@ -73,8 +65,6 @@ func Test_agent_SendToSever(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := NewTestHTTPClient(func(req *http.Request) *http.Response {
-
-				assert.Equal(t, req.URL.String(), tt.want.uri)
 
 				return &http.Response{
 					StatusCode: 200,

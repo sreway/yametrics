@@ -3,43 +3,54 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"github.com/caarlos0/env/v6"
 	"net"
 	"strconv"
 	"time"
 )
 
-type OptionAgent func(*agentConfig) error
-
-type agentConfig struct {
-	pollInterval      time.Duration
-	reportInterval    time.Duration
-	serverAddr        string
-	serverPort        string
-	serverScheme      string
-	serverContentType string
-	serverURL         string
-}
-
-func newAgentConfig() *agentConfig {
-	const (
-		pollInterval   = 2 * time.Second
-		reportInterval = 10 * time.Second
-		serverAddr     = "127.0.0.1"
-		serverPort     = "8080"
-		serverScheme   = "http"
-	)
-
-	return &agentConfig{
-		pollInterval:   pollInterval,
-		reportInterval: reportInterval,
-		serverAddr:     serverAddr,
-		serverPort:     serverPort,
-		serverScheme:   serverScheme,
-		serverURL:      fmt.Sprintf("%s://%s:%s", serverScheme, serverAddr, serverPort),
+type (
+	agentConfig struct {
+		PollInterval   time.Duration `env:"POLL_INTERVAL"`
+		ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+		ServerAddress  string        `env:"ADDRESS"`
+		metricEndpoint string
 	}
-}
+	OptionAgent func(*agentConfig) error
+)
 
-var ErrInvalidConfigOps = errors.New("invalid configuration option")
+var (
+	ServerAddressDefault  = "127.0.0.1:8080"
+	ReportIntervalDefault = 10 * time.Second
+	PollIntervalDefault   = 2 * time.Second
+	ErrInvalidConfigOps   = errors.New("invalid configuration option")
+	ErrInvalidConfig      = errors.New("invalid configuration")
+)
+
+func newAgentConfig() (*agentConfig, error) {
+	cfg := agentConfig{
+		ServerAddress:  ServerAddressDefault,
+		ReportInterval: ReportIntervalDefault,
+		PollInterval:   PollIntervalDefault,
+	}
+	if err := env.Parse(&cfg); err != nil {
+		return nil, fmt.Errorf("newAgentConfig: %v", err)
+	}
+	_, port, err := net.SplitHostPort(cfg.ServerAddress)
+
+	if err != nil {
+		return nil, fmt.Errorf("newAgentConfig: %w invalid address %s", ErrInvalidConfig, cfg.ServerAddress)
+	}
+
+	_, err = strconv.Atoi(port)
+
+	if err != nil {
+		return nil, fmt.Errorf("newAgentConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.ServerAddress)
+	}
+
+	cfg.metricEndpoint = fmt.Sprintf("http://%s/update/", cfg.ServerAddress)
+	return &cfg, nil
+}
 
 func WithPollInterval(poolInterval string) OptionAgent {
 	return func(cfg *agentConfig) error {
@@ -47,7 +58,7 @@ func WithPollInterval(poolInterval string) OptionAgent {
 		if err != nil {
 			return fmt.Errorf("WithPollInterval: %w: %s", ErrInvalidConfigOps, poolInterval)
 		}
-		cfg.pollInterval = poolIntervalDuration
+		cfg.PollInterval = poolIntervalDuration
 		return nil
 	}
 }
@@ -58,52 +69,7 @@ func WithReportInterval(reportInterval string) OptionAgent {
 		if err != nil {
 			return fmt.Errorf("WithReportInterval: %w: %s", ErrInvalidConfigOps, reportInterval)
 		}
-		cfg.reportInterval = reportIntervalDuration
-		return nil
-	}
-}
-
-func WithServerAddr(serverAddr string) OptionAgent {
-	return func(cfg *agentConfig) error {
-
-		if r := net.ParseIP(serverAddr); r == nil {
-			return fmt.Errorf("WithServerAddr: %w: %s", ErrInvalidConfigOps, serverAddr)
-		}
-
-		cfg.serverAddr = serverAddr
-		cfg.serverURL = fmt.Sprintf("%s://%s:%s", cfg.serverScheme, serverAddr, cfg.serverPort)
-		return nil
-	}
-}
-
-func WithServerPort(serverPort string) OptionAgent {
-	return func(cfg *agentConfig) error {
-
-		_, err := strconv.Atoi(serverPort)
-
-		if err != nil {
-			return fmt.Errorf("WithServerPort: %w: %s", ErrInvalidConfigOps, serverPort)
-		}
-
-		cfg.serverPort = serverPort
-		cfg.serverURL = fmt.Sprintf("%s://%s:%s", cfg.serverScheme, cfg.serverAddr, serverPort)
-		return nil
-	}
-}
-
-func WithServerScheme(serverScheme string) OptionAgent {
-	return func(cfg *agentConfig) error {
-
-		validSchemes := map[string]struct{}{
-			"http": {}, "https": {},
-		}
-
-		if _, ok := validSchemes[serverScheme]; !ok {
-			return fmt.Errorf("WithServerPort: %w: invalid scheme %s", ErrInvalidConfigOps, serverScheme)
-		}
-
-		cfg.serverPort = serverScheme
-		cfg.serverURL = fmt.Sprintf("%s://%s:%s", serverScheme, cfg.serverAddr, cfg.serverPort)
+		cfg.ReportInterval = reportIntervalDuration
 		return nil
 	}
 }
