@@ -26,8 +26,8 @@ type (
 		Save(metric metrics.Metric) error
 		GetMetric(metricType, metricID string) (*metrics.Metric, error)
 		GetMetrics() metrics.Metrics
-		StoreMetrics(filePath string) error
-		LoadMetrics(filePath string) error
+		StoreMetrics(fileObj *os.File) error
+		LoadMetrics(fileObj *os.File) error
 		IncrementCounter(metricID string, value int64)
 	}
 )
@@ -79,53 +79,37 @@ func (s *MemoryStorage) GetMetrics() metrics.Metrics {
 	return s.metrics
 }
 
-func (s *MemoryStorage) StoreMetrics(filePath string) error {
+func (s *MemoryStorage) StoreMetrics(fileObj *os.File) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	flag := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	fileObj, err := os.OpenFile(filePath, flag, 0644)
-	defer func() {
-		err := fileObj.Close()
-		if err != nil {
-			log.Printf("can't close file %s\n", filePath)
-		}
-	}()
+	err := fileObj.Truncate(0)
 
 	if err != nil {
-		return fmt.Errorf("%w: can't open file %s", ErrStoreMetrics, filePath)
+		return fmt.Errorf("%w cat't truncate file", ErrStoreMetrics)
+	}
+	_, err = fileObj.Seek(0, 0)
+
+	if err != nil {
+		return fmt.Errorf("%w cat't seek file", ErrStoreMetrics)
 	}
 
 	if err := json.NewEncoder(fileObj).Encode(s.GetMetrics()); err != nil {
 		return fmt.Errorf("%w: cant't encode metrics", ErrStoreMetrics)
 	}
-
-	log.Printf("success save metrics to file %s\n", filePath)
+	log.Println("success save metrics to file")
 
 	return nil
 }
 
-func (s *MemoryStorage) LoadMetrics(filePath string) error {
+func (s *MemoryStorage) LoadMetrics(fileObj *os.File) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	fileObj, err := os.Open(filePath)
-	defer func() {
-		err := fileObj.Close()
-		if err != nil {
-			log.Printf("can't close file %s\n", filePath)
-		}
-	}()
-
-	if err != nil {
-		return fmt.Errorf("%w: can't open file %s", ErrLoadMetrics, filePath)
-	}
 
 	if err := json.NewDecoder(fileObj).Decode(&s.metrics); err != nil {
 		return fmt.Errorf("%w: cant't decode metrics", ErrLoadMetrics)
 	}
-
-	log.Printf("success load metrics from file %s\n", filePath)
+	log.Printf("success load metrics")
 
 	return nil
 }

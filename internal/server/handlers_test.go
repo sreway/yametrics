@@ -121,6 +121,7 @@ func Test_server_UpdateMetric(t *testing.T) {
 		nil,
 		storage.NewMemoryStorage(),
 		nil,
+		nil,
 	}
 
 	for _, tt := range tests {
@@ -255,6 +256,7 @@ func Test_server_MetricValue(t *testing.T) {
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
+		nil,
 		nil,
 	}
 
@@ -398,6 +400,7 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 		nil,
 		storage.NewMemoryStorage(),
 		nil,
+		nil,
 	}
 
 	for _, tt := range tests {
@@ -525,6 +528,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 		},
 	}
 	s := &server{
+		nil,
 		nil,
 		nil,
 		nil,

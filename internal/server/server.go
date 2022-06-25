@@ -21,9 +21,10 @@ type Server interface {
 }
 
 type server struct {
-	httpServer *http.Server
-	storage    storage.Storage
-	cfg        *serverConfig
+	httpServer  *http.Server
+	storage     storage.Storage
+	cfg         *serverConfig
+	storageFile *os.File
 }
 
 func NewServer(opts ...OptionServer) (Server, error) {
@@ -38,12 +39,19 @@ func NewServer(opts ...OptionServer) (Server, error) {
 		}
 	}
 
+	storageFile, err := OpenStorageFile(srvCfg.StoreFile)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &server{
 		&http.Server{
 			Addr: srvCfg.Address,
 		},
 		storage.NewMemoryStorage(),
 		srvCfg,
+		storageFile,
 	}, nil
 }
 
@@ -82,7 +90,7 @@ func (s *server) Start() {
 			switch systemSignal {
 			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 				log.Println("signal triggered.")
-				_ = s.storage.StoreMetrics(s.cfg.StoreFile)
+				_ = s.storage.StoreMetrics(s.storageFile)
 				exitChan <- 0
 			default:
 				log.Println("unknown signal.")
@@ -93,6 +101,10 @@ func (s *server) Start() {
 
 	exitCode := <-exitChan
 	cancel()
+	err := s.storageFile.Close()
+	if err != nil {
+		panic(err)
+	}
 	os.Exit(exitCode)
 }
 
@@ -124,7 +136,7 @@ func (s *server) saveMetric(metric metrics.Metric) error {
 	}
 
 	if s.cfg != nil && s.cfg.StoreInterval == 0 {
-		_ = s.storage.StoreMetrics(s.cfg.StoreFile)
+		_ = s.storage.StoreMetrics(s.storageFile)
 	}
 
 	return nil
@@ -148,7 +160,7 @@ func (s *server) storeMetrics(ctx context.Context) {
 	for {
 		select {
 		case <-tick.C:
-			err := s.storage.StoreMetrics(s.cfg.StoreFile)
+			err := s.storage.StoreMetrics(s.storageFile)
 			if err != nil {
 				log.Println(err)
 			}
@@ -159,9 +171,18 @@ func (s *server) storeMetrics(ctx context.Context) {
 }
 
 func (s *server) loadMetrics() error {
-	err := s.storage.LoadMetrics(s.cfg.StoreFile)
+	err := s.storage.LoadMetrics(s.storageFile)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func OpenStorageFile(path string) (*os.File, error) {
+	flag := os.O_RDWR | os.O_CREATE
+	fileObj, err := os.OpenFile(path, flag, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("NewServer: can't open file %s", path)
+	}
+	return fileObj, nil
 }

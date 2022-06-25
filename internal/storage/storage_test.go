@@ -24,6 +24,15 @@ func NewTestMemoryStorage(metricID, metricType, metricValue string) (Storage, er
 	return testStorage, err
 }
 
+func OpenTestFile(path string) (*os.File, error) {
+	flag := os.O_RDWR | os.O_CREATE
+	fileObj, err := os.OpenFile(path, flag, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("NewFileObj: can't open file %s", path)
+	}
+	return fileObj, nil
+}
+
 func Test_storage_Save(t *testing.T) {
 	type args struct {
 		metricID    string
@@ -209,7 +218,13 @@ func Test_storage_StoreMetrics(t *testing.T) {
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
 				tt.fields.storageData.metricValue)
 			assert.NoError(t, err)
-			tt.wantErr(t, s.StoreMetrics(tt.args.filePath), fmt.Sprintf("StoreMetrics(%v)", tt.args.filePath))
+			fileObj, err := OpenTestFile(tt.args.filePath)
+			defer func() {
+				err = fileObj.Close()
+				assert.NoError(t, err)
+			}()
+			assert.NoError(t, err)
+			tt.wantErr(t, s.StoreMetrics(fileObj), fmt.Sprintf("StoreMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
 		})
 	}
@@ -257,9 +272,19 @@ func Test_storage_LoadMetrics(t *testing.T) {
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
 				tt.fields.storageData.metricValue)
 			assert.NoError(t, err)
-			err = s.StoreMetrics(tt.args.filePath)
+			fileObj, err := OpenTestFile(tt.args.filePath)
 			assert.NoError(t, err)
-			tt.wantErr(t, s.LoadMetrics(tt.args.filePath), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
+			err = s.StoreMetrics(fileObj)
+			assert.NoError(t, err)
+			err = fileObj.Close()
+			assert.NoError(t, err)
+			fileObjWithData, err := OpenTestFile(tt.args.filePath)
+			defer func() {
+				err = fileObjWithData.Close()
+				assert.NoError(t, err)
+			}()
+			assert.NoError(t, err)
+			tt.wantErr(t, s.LoadMetrics(fileObjWithData), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
 
 		})
