@@ -11,6 +11,7 @@ func init() {
 		"server address: host:port")
 	flag.DurationVar(&agent.ReportIntervalDefault, "r", agent.ReportIntervalDefault, "report interval")
 	flag.DurationVar(&agent.PollIntervalDefault, "p", agent.PollIntervalDefault, "poll interval")
+	flag.StringVar(&agent.KeyDefault, "k", agent.KeyDefault, "encrypt key")
 	flag.Parse()
 }
 

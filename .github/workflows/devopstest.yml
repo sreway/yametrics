@@ -283,29 +283,29 @@ jobs:
 ##   * добавить поддержку аргумента через переменную окружения "KEY=<КЛЮЧ>"
 ##   * при наличии ключа, агент должен вычислять хеш и передавать в поле hash запроса.
 #
-## Сервер:
-##   * добавить поддержку аргумента через флаг "-k=<КЛЮЧ>"
-##   * добавить поддержку аргумента через переменную окружения "KEY=<КЛЮЧ>"
-##   * при наличии ключа, во время обработки запроса, сервер должен проверять соответствие полученного и вычисленного хеша.
-##     при не совпадении отбрасывать полученные данные и возвращать http.StatusBadRequest
-##   * при наличии ключа, на этапе формирования ответа, сервер должен
-##     вычислять хеш и передавать его в соответствующем поле hash ответа.
-#
-#      - name: "Code increment #9"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration9$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -file-storage-path=$TEMP_FILE \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -key="${TEMP_FILE}"
-#
+# Сервер:
+#   * добавить поддержку аргумента через флаг "-k=<КЛЮЧ>"
+#   * добавить поддержку аргумента через переменную окружения "KEY=<КЛЮЧ>"
+#   * при наличии ключа, во время обработки запроса, сервер должен проверять соответствие полученного и вычисленного хеша.
+#     при не совпадении отбрасывать полученные данные и возвращать http.StatusBadRequest
+#   * при наличии ключа, на этапе формирования ответа, сервер должен
+#     вычислять хеш и передавать его в соответствующем поле hash ответа.
+
+      - name: "Code increment #9"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration9$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -file-storage-path=$TEMP_FILE \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -key="${TEMP_FILE}"
+
 ## X. Задание к десятому инкременту.
 ## Сервер:
 ## * Добавьте функциональность подключения к базе данных. В качестве СУБД используйте PostgreSQL версии не ниже 10.

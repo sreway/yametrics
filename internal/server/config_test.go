@@ -97,6 +97,11 @@ func Test_newServerConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := os.Setenv(tt.args.envName, tt.args.envValue)
 			assert.NoError(t, err)
+			defer func() {
+				err = os.Unsetenv(tt.args.envName)
+				assert.NoError(t, err)
+			}()
+			assert.NoError(t, err)
 			_, err = newServerConfig()
 			if !tt.wantErr {
 				assert.NoError(t, err)

@@ -17,6 +17,8 @@ type (
 		Restore       bool          `env:"RESTORE"`
 		compressLevel int
 		compressTypes []string
+		Key           string `env:"KEY"`
+		withHash      bool
 	}
 	OptionServer func(*serverConfig) error
 )
@@ -26,6 +28,7 @@ var (
 	StoreIntervalDefault = 300 * time.Second
 	RestoreDefault       = true
 	StoreFileDefault     = "/tmp/devops-metrics-db.json"
+	KeyDefault           string
 	CompressLevelDefault = 5
 	CompressTypesDefault = []string{
 		"text/html",
@@ -37,6 +40,7 @@ var (
 )
 
 func newServerConfig() (*serverConfig, error) {
+
 	cfg := serverConfig{
 		Address:       AddressDefault,
 		StoreInterval: StoreIntervalDefault,
@@ -44,6 +48,7 @@ func newServerConfig() (*serverConfig, error) {
 		StoreFile:     StoreFileDefault,
 		compressLevel: CompressLevelDefault,
 		compressTypes: CompressTypesDefault,
+		Key:           KeyDefault,
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -60,6 +65,10 @@ func newServerConfig() (*serverConfig, error) {
 
 	if err != nil {
 		return nil, fmt.Errorf("newServerConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.Address)
+	}
+
+	if cfg.Key != "" {
+		cfg.withHash = true
 	}
 
 	return &cfg, nil

@@ -124,7 +124,14 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 func (a *agent) SendToSever(metrics []metrics.Metric) error {
 	for _, metric := range metrics {
 		var body bytes.Buffer
+		if a.Config.Key != "" {
+			sign, err := metric.CalcHash(a.Config.Key)
 
+			if err != nil {
+				return fmt.Errorf("Agent_SendToSever error: %w", err)
+			}
+			metric.Hash = sign
+		}
 		if err := json.NewEncoder(&body).Encode(&metric); err != nil {
 			return fmt.Errorf("failed encode metric: %v", err)
 		}

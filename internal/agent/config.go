@@ -15,6 +15,7 @@ type (
 		ReportInterval time.Duration `env:"REPORT_INTERVAL"`
 		ServerAddress  string        `env:"ADDRESS"`
 		metricEndpoint string
+		Key            string `env:"KEY"`
 	}
 	OptionAgent func(*agentConfig) error
 )
@@ -23,6 +24,7 @@ var (
 	ServerAddressDefault  = "127.0.0.1:8080"
 	ReportIntervalDefault = 10 * time.Second
 	PollIntervalDefault   = 2 * time.Second
+	KeyDefault            string
 	ErrInvalidConfigOps   = errors.New("invalid configuration option")
 	ErrInvalidConfig      = errors.New("invalid configuration")
 )
@@ -32,6 +34,7 @@ func newAgentConfig() (*agentConfig, error) {
 		ServerAddress:  ServerAddressDefault,
 		ReportInterval: ReportIntervalDefault,
 		PollInterval:   PollIntervalDefault,
+		Key:            KeyDefault,
 	}
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %v", err)

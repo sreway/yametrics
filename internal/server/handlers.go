@@ -40,13 +40,15 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.saveMetric(m)
+	err = s.saveMetric(m, false)
 
 	if err != nil {
 		switch {
 		case errors.Is(err, metrics.ErrInvalidMetricType):
 			w.WriteHeader(http.StatusNotImplemented)
 		case errors.Is(err, metrics.ErrInvalidMetricValue):
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, ErrInvalidMetricHash):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
@@ -90,7 +92,7 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	metricName := chi.URLParam(r, "metricName")
 	metricType := chi.URLParam(r, "metricType")
 
-	metric, err := s.getMetric(metricType, metricName)
+	metric, err := s.getMetric(metricType, metricName, false)
 	if err != nil {
 		switch {
 		case errors.Is(err, metrics.ErrInvalidMetricType):
@@ -125,18 +127,21 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.saveMetric(m)
+	err := s.saveMetric(m, s.cfg.withHash)
 
 	if err != nil {
 		switch {
 		case errors.Is(err, metrics.ErrInvalidMetricType):
-			log.Println("UpdateMetricJSON: invalid input metric type")
+			log.Println("Server_UpdateMetricJSON: invalid input metric type")
 			w.WriteHeader(http.StatusNotImplemented)
 		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			log.Println("UpdateMetricJSON: invalid input metric value")
+			log.Println("Server_UpdateMetricJSON: invalid input metric value")
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, ErrInvalidMetricHash):
+			log.Println("Server_UpdateMetricJSON: invalid input metric hash")
 			w.WriteHeader(http.StatusBadRequest)
 		default:
-			log.Println("UpdateMetricJSON: err not implemented")
+			log.Println("Server_UpdateMetricJSON: err not implemented")
 			w.WriteHeader(http.StatusNotImplemented)
 		}
 	}
@@ -160,7 +165,7 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sMetric, err := s.getMetric(m.MType, m.ID)
+	sMetric, err := s.getMetric(m.MType, m.ID, s.cfg.withHash)
 
 	if err != nil {
 		switch {

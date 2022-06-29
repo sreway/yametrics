@@ -117,10 +117,12 @@ func Test_server_UpdateMetric(t *testing.T) {
 		},
 	}
 
+	cfg, _ := newServerConfig()
+
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
-		nil,
+		cfg,
 		nil,
 	}
 
@@ -252,11 +254,11 @@ func Test_server_MetricValue(t *testing.T) {
 			},
 		},
 	}
-
+	cfg, _ := newServerConfig()
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
-		nil,
+		cfg,
 		nil,
 	}
 
@@ -395,11 +397,11 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 			},
 		},
 	}
-
+	cfg, _ := newServerConfig()
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
-		nil,
+		cfg,
 		nil,
 	}
 
@@ -527,10 +529,13 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			},
 		},
 	}
+
+	cfg, _ := newServerConfig()
+
 	s := &server{
 		nil,
 		nil,
-		nil,
+		cfg,
 		nil,
 	}
 

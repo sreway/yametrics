@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -55,6 +57,7 @@ type (
 		MType string   `json:"type"`
 		Delta *int64   `json:"delta,omitempty"`
 		Value *float64 `json:"value,omitempty"`
+		Hash  string   `json:"hash,omitempty"`
 	}
 
 	Metrics struct {
@@ -166,4 +169,21 @@ func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
 	default:
 		return nil, fmt.Errorf("Metric_GetMetrics error: %w", ErrInvalidMetricType)
 	}
+}
+
+func (m *Metric) CalcHash(key string) (string, error) {
+	var msg string
+	switch m.MType {
+	case "counter":
+		msg = fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta)
+	case "gauge":
+		msg = fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value)
+	default:
+		return "", fmt.Errorf("Metric_CalcHash error: %w", ErrInvalidMetricType)
+	}
+
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write([]byte(msg))
+	hash := h.Sum(nil)
+	return fmt.Sprintf("%x", hash), nil
 }

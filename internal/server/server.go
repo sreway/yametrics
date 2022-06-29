@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+var ErrInvalidMetricHash = errors.New("invalid metric hash")
+
 type Server interface {
 	Start()
 }
@@ -108,11 +110,21 @@ func (s *server) Start() {
 	os.Exit(exitCode)
 }
 
-func (s *server) saveMetric(metric metrics.Metric) error {
+func (s *server) saveMetric(metric metrics.Metric, withHash bool) error {
+	if withHash {
+		sign, err := metric.CalcHash(s.cfg.Key)
+
+		if err != nil {
+			return fmt.Errorf("Server_saveMetric error:%w", err)
+		}
+
+		if sign != metric.Hash {
+			return fmt.Errorf("Server_saveMetric error:%w", ErrInvalidMetricHash)
+		}
+	}
 	switch metric.IsCounter() {
 	case true:
 		_, err := s.storage.GetMetric(metric.MType, metric.ID)
-
 		if err != nil {
 			switch {
 			case errors.Is(err, storage.ErrNotFoundMetric):
@@ -142,11 +154,21 @@ func (s *server) saveMetric(metric metrics.Metric) error {
 	return nil
 }
 
-func (s *server) getMetric(metricType, metricName string) (metrics.Metric, error) {
+func (s *server) getMetric(metricType, metricName string, withHash bool) (metrics.Metric, error) {
 	m, err := s.storage.GetMetric(metricType, metricName)
 	if err != nil {
 		return metrics.Metric{}, err
 	}
+
+	if withHash {
+		sign, err := m.CalcHash(s.cfg.Key)
+
+		if err != nil {
+			return metrics.Metric{}, fmt.Errorf("Server_getMetric error:%w", err)
+		}
+		m.Hash = sign
+	}
+
 	return *m, err
 }
 
