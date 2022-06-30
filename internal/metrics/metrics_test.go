@@ -148,33 +148,19 @@ func TestMetric_CalcHash(t *testing.T) {
 			want:    "f3e50b2a3b4dbacd24fcac746ee982f5974d84cdbbf78f4adaf261d1632d34f1",
 			wantErr: true,
 		},
-
-		{
-			name: "invalid type",
-			fields: fields{
-				ID:     "testGauge",
-				MType:  "invalid",
-				MValue: "11",
-			},
-			args: args{
-				"SuperSecretKey",
-			},
-			want:    "",
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m, err := NewMetric(tt.fields.ID, tt.fields.MType, tt.fields.MValue)
 			assert.NoError(t, err)
+
 			got, err := m.CalcHash(tt.args.key)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CalcHash() error = %v, wantErr %v", err, tt.wantErr)
+			assert.NoError(t, err)
+			if got != tt.want && tt.wantErr == false {
+				t.Errorf("CalcHash() got = %v, want %v", got, tt.want)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("CalcHash() got = %v, want %v", got, tt.want)
-			}
+
 		})
 	}
 }
