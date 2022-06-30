@@ -117,8 +117,8 @@ func Test_server_UpdateMetric(t *testing.T) {
 		},
 	}
 
-	cfg, _ := newServerConfig()
-
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
@@ -254,7 +254,8 @@ func Test_server_MetricValue(t *testing.T) {
 			},
 		},
 	}
-	cfg, _ := newServerConfig()
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
@@ -397,7 +398,8 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 			},
 		},
 	}
-	cfg, _ := newServerConfig()
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
 	s := &server{
 		nil,
 		storage.NewMemoryStorage(),
@@ -529,9 +531,8 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			},
 		},
 	}
-
-	cfg, _ := newServerConfig()
-
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
 	s := &server{
 		nil,
 		nil,
