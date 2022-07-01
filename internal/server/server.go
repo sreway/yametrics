@@ -22,14 +22,17 @@ type Server interface {
 	Start()
 }
 
-type server struct {
-	httpServer  *http.Server
-	storage     storage.Storage
-	cfg         *serverConfig
-	storageFile *os.File
-}
+type (
+	server struct {
+		httpServer  *http.Server
+		storage     storage.Storage
+		cfg         *serverConfig
+		storageFile *os.File
+	}
+)
 
 func NewServer(opts ...OptionServer) (Server, error) {
+	var storageFile *os.File
 	srvCfg, err := newServerConfig()
 	if err != nil {
 		return nil, err
@@ -41,17 +44,19 @@ func NewServer(opts ...OptionServer) (Server, error) {
 		}
 	}
 
-	storageFile, err := OpenStorageFile(srvCfg.StoreFile)
+	if srvCfg.useFile {
+		storageFile, err = OpenStorageFile(srvCfg.StoreFile)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &server{
 		&http.Server{
 			Addr: srvCfg.Address,
 		},
-		storage.NewMemoryStorage(),
+		nil,
 		srvCfg,
 		storageFile,
 	}, nil
@@ -63,15 +68,32 @@ func (s *server) Start() {
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 
-	if s.cfg.Restore {
-		err := s.loadMetrics()
-		if err != nil {
-			log.Println(err)
-		}
+	err := s.setStorage(ctx)
+
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	if s.cfg.StoreInterval != 0 {
-		go s.storeMetrics(ctx)
+	if s.cfg.useFile {
+		fileObj, err := OpenStorageFile(s.cfg.StoreFile)
+
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		s.storageFile = fileObj
+
+		if s.cfg.Restore {
+			err := s.loadMetrics()
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+		if s.cfg.StoreInterval != 0 {
+			go s.storeMetrics(ctx)
+		}
+
 	}
 
 	go func() {
@@ -79,6 +101,7 @@ func (s *server) Start() {
 		r.Use(middleware.Compress(s.cfg.compressLevel, s.cfg.compressTypes...))
 		s.initRoutes(r)
 		s.httpServer.Handler = r
+
 		err := s.httpServer.ListenAndServe()
 		if err != nil {
 			log.Printf("server start: %v", err)
@@ -92,7 +115,12 @@ func (s *server) Start() {
 			switch systemSignal {
 			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 				log.Println("signal triggered.")
-				_ = s.storage.StoreMetrics(s.storageFile)
+				if s.cfg.useFile {
+					err := s.storage.(storage.MemoryStorage).StoreMetrics(s.storageFile)
+					if err != nil {
+						log.Printf("Server_Start error: %v", err)
+					}
+				}
 				exitChan <- 0
 			default:
 				log.Println("unknown signal.")
@@ -103,10 +131,13 @@ func (s *server) Start() {
 
 	exitCode := <-exitChan
 	cancel()
-	err := s.storageFile.Close()
+
+	err = s.closeStorage()
+
 	if err != nil {
 		panic(err)
 	}
+
 	os.Exit(exitCode)
 }
 
@@ -148,7 +179,7 @@ func (s *server) saveMetric(metric metrics.Metric, withHash bool) error {
 	}
 
 	if s.cfg != nil && s.cfg.StoreInterval == 0 {
-		_ = s.storage.StoreMetrics(s.storageFile)
+		_ = s.storage.(storage.MemoryStorage).StoreMetrics(s.storageFile)
 	}
 
 	return nil
@@ -182,7 +213,7 @@ func (s *server) storeMetrics(ctx context.Context) {
 	for {
 		select {
 		case <-tick.C:
-			err := s.storage.StoreMetrics(s.storageFile)
+			err := s.storage.(storage.MemoryStorage).StoreMetrics(s.storageFile)
 			if err != nil {
 				log.Println(err)
 			}
@@ -193,9 +224,50 @@ func (s *server) storeMetrics(ctx context.Context) {
 }
 
 func (s *server) loadMetrics() error {
-	err := s.storage.LoadMetrics(s.storageFile)
+	err := s.storage.(storage.MemoryStorage).LoadMetrics(s.storageFile)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *server) setStorage(ctx context.Context) error {
+	if s.cfg.Dsn != "" {
+		storageObj, err := storage.NewPgStorage(ctx, s.cfg.Dsn)
+		if err != nil {
+			log.Printf("Server_setStorage error: %v", err)
+			s.storage = storage.NewMemoryStorage()
+			s.cfg.useFile = true
+			return nil
+		}
+		s.storage = storageObj
+		return nil
+	}
+	s.storage = storage.NewMemoryStorage()
+	return nil
+}
+
+func (s *server) pingStorage(ctx context.Context) error {
+	if err := s.storage.(storage.PgStorage).Ping(ctx); err != nil {
+		return fmt.Errorf("Server_pingStorage error: %w", err)
+	}
+	return nil
+}
+
+func (s *server) closeStorage() error {
+	switch s.storage.(type) {
+	case storage.MemoryStorage:
+		err := s.storageFile.Close()
+		if err != nil {
+			return err
+		}
+	case storage.PgStorage:
+		err := s.storage.(storage.PgStorage).Close()
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown storage type")
 	}
 	return nil
 }

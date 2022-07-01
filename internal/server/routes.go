@@ -8,4 +8,5 @@ func (s *server) initRoutes(r *chi.Mux) {
 	r.Post("/value/", s.MetricValueJSON)
 	r.Get("/value/{metricType}/{metricName}", s.MetricValue)
 	r.Get("/", s.Index)
+	r.Get("/ping", s.Ping)
 }

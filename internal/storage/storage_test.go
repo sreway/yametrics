@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func NewTestMemoryStorage(metricID, metricType, metricValue string) (Storage, error) {
+func NewTestMemoryStorage(metricID, metricType, metricValue string) (MemoryStorage, error) {
 	metric, err := metrics.NewMetric(metricID, metricType, metricValue)
 	if err != nil {
 		return nil, err

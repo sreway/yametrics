@@ -211,7 +211,7 @@ jobs:
             -agent-binary-path=cmd/agent/agent \
             -binary-path=cmd/server/server \
             -server-port=$SERVER_PORT \
-            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -database-dsn='unavailable-dsn' \
             -file-storage-path=$TEMP_FILE
 
 ## VII. Задание к седьмому инкременту.
@@ -238,7 +238,7 @@ jobs:
             -agent-binary-path=cmd/agent/agent \
             -binary-path=cmd/server/server \
             -server-port=$SERVER_PORT \
-            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -database-dsn='unavailable-dsn' \
             -file-storage-path=$TEMP_FILE
 
 ## VIII. Задание к восьмому инкременту.
@@ -256,7 +256,7 @@ jobs:
             -agent-binary-path=cmd/agent/agent \
             -binary-path=cmd/server/server \
             -server-port=$SERVER_PORT \
-            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -database-dsn='unavailable-dsn' \
             -file-storage-path=$TEMP_FILE
 #
 ## IX. Задание к девятому инкременту.
@@ -303,7 +303,7 @@ jobs:
             -binary-path=cmd/server/server \
             -server-port=$SERVER_PORT \
             -file-storage-path=$TEMP_FILE \
-            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -database-dsn='unavailable-dsn' \
             -key="${TEMP_FILE}"
 
 ## X. Задание к десятому инкременту.
@@ -314,20 +314,20 @@ jobs:
 ## * Строка с адресом подключения к БД должна получаться из переменной окружения DATABASE_DSN или флага командной строки -d.
 ##   Использование этого параметра имеет приоритет над параметром -file-storage-path и автоматически задействует функциональность сервера БД
 ## NOTE: Для хранения значений gauge рекомендуется использовать тип: double precision
-#      - name: "Code increment #10"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration10[b]*$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -key="${TEMP_FILE}"
-#
+      - name: "Code increment #10"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration10[b]*$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -key="${TEMP_FILE}"
+
 ## XI. Задание к одиннадцатому инкременту.
 ## Сервер:
 ## * Перепишите сервер так, чтобы СУБД PostgresSQL стала хранилищем метрик вместо текущей реализации.

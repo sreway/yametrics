@@ -1,9 +1,11 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"os"
@@ -11,28 +13,43 @@ import (
 )
 
 var (
-	ErrNotFoundMetric = errors.New("not found metric")
-	ErrStoreMetrics   = errors.New("can't store metrics")
-	ErrLoadMetrics    = errors.New("can't load metrics")
+	ErrNotFoundMetric     = errors.New("not found metric")
+	ErrStoreMetrics       = errors.New("can't store metrics")
+	ErrLoadMetrics        = errors.New("can't load metrics")
+	ErrStorageUnavailable = errors.New("storage unavailable")
 )
 
 type (
-	MemoryStorage struct {
+	memoryStorage struct {
 		metrics metrics.Metrics
 		mu      sync.RWMutex
+	}
+
+	pgStorage struct {
+		connection *pgx.Conn
 	}
 
 	Storage interface {
 		Save(metric metrics.Metric) error
 		GetMetric(metricType, metricID string) (*metrics.Metric, error)
 		GetMetrics() metrics.Metrics
-		StoreMetrics(fileObj *os.File) error
-		LoadMetrics(fileObj *os.File) error
 		IncrementCounter(metricID string, value int64)
+	}
+
+	MemoryStorage interface {
+		Storage
+		LoadMetrics(fileObj *os.File) error
+		StoreMetrics(fileObj *os.File) error
+	}
+
+	PgStorage interface {
+		Storage
+		Ping(ctx context.Context) error
+		Close() error
 	}
 )
 
-func (s *MemoryStorage) UnmarshalJSON(data []byte) error {
+func (s *memoryStorage) UnmarshalJSON(data []byte) error {
 	tmpData := new(metrics.Metrics)
 	if err := json.Unmarshal(data, &tmpData); err != nil {
 		return err
@@ -40,7 +57,7 @@ func (s *MemoryStorage) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *MemoryStorage) Save(metric metrics.Metric) error {
+func (s *memoryStorage) Save(metric metrics.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -55,7 +72,7 @@ func (s *MemoryStorage) Save(metric metrics.Metric) error {
 	return nil
 }
 
-func (s *MemoryStorage) GetMetric(metricType, metricName string) (*metrics.Metric, error) {
+func (s *memoryStorage) GetMetric(metricType, metricName string) (*metrics.Metric, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -75,11 +92,11 @@ func (s *MemoryStorage) GetMetric(metricType, metricName string) (*metrics.Metri
 
 }
 
-func (s *MemoryStorage) GetMetrics() metrics.Metrics {
+func (s *memoryStorage) GetMetrics() metrics.Metrics {
 	return s.metrics
 }
 
-func (s *MemoryStorage) StoreMetrics(fileObj *os.File) error {
+func (s *memoryStorage) StoreMetrics(fileObj *os.File) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -102,7 +119,7 @@ func (s *MemoryStorage) StoreMetrics(fileObj *os.File) error {
 	return nil
 }
 
-func (s *MemoryStorage) LoadMetrics(fileObj *os.File) error {
+func (s *memoryStorage) LoadMetrics(fileObj *os.File) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -114,18 +131,58 @@ func (s *MemoryStorage) LoadMetrics(fileObj *os.File) error {
 	return nil
 }
 
-func (s *MemoryStorage) IncrementCounter(metricID string, value int64) {
+func (s *memoryStorage) IncrementCounter(metricID string, value int64) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	*s.metrics.Counter[metricID].Delta = *s.metrics.Counter[metricID].Delta + value
 }
 
-func NewMemoryStorage() Storage {
-	return &MemoryStorage{
+func NewMemoryStorage() MemoryStorage {
+	return &memoryStorage{
 		metrics.Metrics{
 			Counter: make(map[string]metrics.Metric),
 			Gauge:   make(map[string]metrics.Metric),
 		},
 		sync.RWMutex{},
 	}
+}
+
+func NewPgStorage(ctx context.Context, dsn string) (PgStorage, error) {
+	conn, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, fmt.Errorf("NewPgStroge error: %w", err)
+	}
+	log.Println("NewPgStorage: success connect database")
+	return &pgStorage{
+		connection: conn,
+	}, nil
+}
+
+func (s *pgStorage) Save(metric metrics.Metric) error {
+	return nil
+}
+
+func (s *pgStorage) GetMetric(metricType, metricID string) (*metrics.Metric, error) {
+	return nil, nil
+}
+
+func (s *pgStorage) GetMetrics() metrics.Metrics {
+	return metrics.Metrics{}
+}
+
+func (s *pgStorage) IncrementCounter(metricID string, value int64) {}
+
+func (s *pgStorage) Ping(ctx context.Context) error {
+	if err := s.connection.Ping(ctx); err != nil {
+		fmt.Println(err)
+		return fmt.Errorf("pgStorage_Ping: %w", ErrStorageUnavailable)
+	}
+	return nil
+}
+
+func (s *pgStorage) Close() error {
+	if err := s.connection.Close(context.Background()); err != nil {
+		return fmt.Errorf("pgStorage_Close: %w", err)
+	}
+	return nil
 }

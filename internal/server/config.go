@@ -18,7 +18,9 @@ type (
 		compressLevel int
 		compressTypes []string
 		Key           string `env:"KEY"`
+		Dsn           string `env:"DATABASE_DSN"`
 		withHash      bool
+		useFile       bool
 	}
 	OptionServer func(*serverConfig) error
 )
@@ -35,6 +37,8 @@ var (
 		"text/plain",
 		"application/json",
 	}
+	DsnDefault          string
+	UseFileDefault      = true
 	ErrInvalidConfigOps = errors.New("invalid configuration option")
 	ErrInvalidConfig    = errors.New("invalid configuration")
 )
@@ -49,6 +53,8 @@ func newServerConfig() (*serverConfig, error) {
 		compressLevel: CompressLevelDefault,
 		compressTypes: CompressTypesDefault,
 		Key:           KeyDefault,
+		Dsn:           DsnDefault,
+		useFile:       UseFileDefault,
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -69,6 +75,11 @@ func newServerConfig() (*serverConfig, error) {
 
 	if cfg.Key != "" {
 		cfg.withHash = true
+	}
+
+	// database storage priority over file storage
+	if cfg.Dsn != "" {
+		cfg.useFile = false
 	}
 
 	return &cfg, nil

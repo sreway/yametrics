@@ -1,15 +1,18 @@
 package server
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/sreway/yametrics/internal/storage"
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 )
 
 var (
@@ -185,5 +188,25 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed encode metric: %v", err)
 		return
 	}
+
+}
+
+func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+	defer cancel()
+
+	err := s.pingStorage(ctx)
+	fmt.Println(err)
+	if err != nil {
+		switch {
+		case errors.Is(err, storage.ErrStorageUnavailable):
+			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 
 }
