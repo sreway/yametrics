@@ -77,7 +77,7 @@ func Test_agent_SendToSever(t *testing.T) {
 				Config:     NewTestAgentConfig(),
 			}
 
-			err := a.SendToSever(tt.args)
+			err := a.SendToSever(tt.args, false)
 			require.NoError(t, err)
 		})
 	}

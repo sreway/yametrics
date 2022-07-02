@@ -52,7 +52,7 @@ func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case <-tick.C:
 			exposeMetrics := a.collector.ExposeMetrics()
-			err := a.SendToSever(exposeMetrics)
+			err := a.SendToSever(exposeMetrics, a.Config.Key != "")
 
 			if err != nil {
 				log.Printf("agent send error: %v", err)
@@ -80,14 +80,8 @@ func (a *agent) Start() {
 		for {
 			s := <-systemSignals
 			switch s {
-			case syscall.SIGINT:
-				log.Println("signal interrupt triggered.")
-				exitChan <- 0
-			case syscall.SIGTERM:
-				log.Println("signal terminate triggered.")
-				exitChan <- 0
-			case syscall.SIGQUIT:
-				log.Println("signal quit triggered.")
+			case syscall.SIGINT | syscall.SIGTERM | syscall.SIGQUIT:
+				log.Println("signal triggered.")
 				exitChan <- 0
 			default:
 				log.Println("unknown signal.")
@@ -121,10 +115,10 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
-func (a *agent) SendToSever(metrics []metrics.Metric) error {
+func (a *agent) SendToSever(metrics []metrics.Metric, withHash bool) error {
 	for _, metric := range metrics {
 		var body bytes.Buffer
-		if a.Config.Key != "" {
+		if withHash {
 			sign, err := metric.CalcHash(a.Config.Key)
 
 			if err != nil {
