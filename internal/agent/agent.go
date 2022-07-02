@@ -80,7 +80,7 @@ func (a *agent) Start() {
 		for {
 			s := <-systemSignals
 			switch s {
-			case syscall.SIGINT | syscall.SIGTERM | syscall.SIGQUIT:
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 				log.Println("signal triggered.")
 				exitChan <- 0
 			default:
