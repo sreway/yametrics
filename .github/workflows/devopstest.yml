@@ -328,26 +328,26 @@ jobs:
             -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
             -key="${TEMP_FILE}"
 
-## XI. Задание к одиннадцатому инкременту.
-## Сервер:
-## * Перепишите сервер так, чтобы СУБД PostgresSQL стала хранилищем метрик вместо текущей реализации.
-##   Сервису необходимо самостоятельно создать все необходимые таблицы в базе данных,
-##   схема и формат хранения остаются на ваше усмотрение.
-#
-#      - name: "Code increment #11"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration11$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -key="${TEMP_FILE}"
-#
+# XI. Задание к одиннадцатому инкременту.
+# Сервер:
+# * Перепишите сервер так, чтобы СУБД PostgresSQL стала хранилищем метрик вместо текущей реализации.
+#   Сервису необходимо самостоятельно создать все необходимые таблицы в базе данных,
+#   схема и формат хранения остаются на ваше усмотрение.
+
+      - name: "Code increment #11"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration11$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -key="${TEMP_FILE}"
+
 ## XII. Задание к двенадцатому инкременту.
 ## Сервер:
 ## * Добавьте новый хендлер POST /updates/ принимающий в теле запроса множество метрик в формате: []Metrics (списка метрик)

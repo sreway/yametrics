@@ -19,8 +19,6 @@ type (
 		compressTypes []string
 		Key           string `env:"KEY"`
 		Dsn           string `env:"DATABASE_DSN"`
-		withHash      bool
-		useFile       bool
 	}
 	OptionServer func(*serverConfig) error
 )
@@ -38,7 +36,7 @@ var (
 		"application/json",
 	}
 	DsnDefault          string
-	UseFileDefault      = true
+	SourceMigrationsURL = "file://schema/"
 	ErrInvalidConfigOps = errors.New("invalid configuration option")
 	ErrInvalidConfig    = errors.New("invalid configuration")
 )
@@ -54,7 +52,6 @@ func newServerConfig() (*serverConfig, error) {
 		compressTypes: CompressTypesDefault,
 		Key:           KeyDefault,
 		Dsn:           DsnDefault,
-		useFile:       UseFileDefault,
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -71,15 +68,6 @@ func newServerConfig() (*serverConfig, error) {
 
 	if err != nil {
 		return nil, fmt.Errorf("newServerConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.Address)
-	}
-
-	if cfg.Key != "" {
-		cfg.withHash = true
-	}
-
-	// database storage priority over file storage
-	if cfg.Dsn != "" {
-		cfg.useFile = false
 	}
 
 	return &cfg, nil

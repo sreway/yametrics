@@ -5,7 +5,6 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/sreway/yametrics/internal/storage"
@@ -43,7 +42,7 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.saveMetric(m, false)
+	err = s.saveMetric(r.Context(), m, false)
 
 	if err != nil {
 		switch {
@@ -71,8 +70,13 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	sMetrics := s.getMetrics()
 
+	sMetrics, err := s.getMetrics(r.Context())
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotImplemented)
+		return
+	}
 	tmpl, err := template.ParseFS(templatesFS, templatePattern)
 
 	if err != nil {
@@ -95,7 +99,8 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	metricName := chi.URLParam(r, "metricName")
 	metricType := chi.URLParam(r, "metricType")
 
-	metric, err := s.getMetric(metricType, metricName, false)
+	metric, err := s.getMetric(r.Context(), metricType, metricName, false)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, metrics.ErrInvalidMetricType):
@@ -109,6 +114,7 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 			log.Printf("get metric value: %v", err)
 		}
 	}
+
 	_, err = w.Write([]byte(metric.GetStrValue()))
 
 	if err != nil {
@@ -130,7 +136,7 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := s.saveMetric(m, s.cfg.withHash)
+	err := s.saveMetric(r.Context(), m, s.cfg.Key != "")
 
 	if err != nil {
 		switch {
@@ -147,6 +153,7 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 			log.Println("Server_UpdateMetricJSON: err not implemented")
 			w.WriteHeader(http.StatusNotImplemented)
 		}
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(&m); err != nil {
@@ -168,7 +175,7 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sMetric, err := s.getMetric(m.MType, m.ID, s.cfg.withHash)
+	sMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
 
 	if err != nil {
 		switch {
@@ -196,7 +203,7 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	err := s.pingStorage(ctx)
-	fmt.Println(err)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, storage.ErrStorageUnavailable):
@@ -209,4 +216,9 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
+}
+
+func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
+	var m []metrics.Metric
+	_ = s.batchMetrics(r.Context(), m)
 }

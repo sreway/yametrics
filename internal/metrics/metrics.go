@@ -53,10 +53,10 @@ type (
 	}
 
 	Metric struct {
-		ID    string   `json:"id"`
-		MType string   `json:"type"`
-		Delta *int64   `json:"delta,omitempty"`
-		Value *float64 `json:"value,omitempty"`
+		ID    string   `json:"id" db:"name"`
+		MType string   `json:"type" db:"type"`
+		Delta *int64   `json:"delta,omitempty" db:"delta"`
+		Value *float64 `json:"value,omitempty" db:"value"`
 		Hash  string   `json:"hash,omitempty"`
 	}
 
@@ -158,6 +158,52 @@ func (m Metric) GetStrValue() string {
 	default:
 		return ""
 	}
+}
+
+func (m *Metric) Float64Value() float64 {
+	if m.Value == nil {
+		return 0
+	}
+	return *m.Value
+}
+
+func (m *Metric) Float64Pointer() *float64 {
+	return m.Value
+}
+
+func (m *Metric) Int64Value() int64 {
+	if m.Delta == nil {
+		return 0
+	}
+	return *m.Delta
+}
+
+func (m *Metric) Int64Pointer() *int64 {
+	return m.Delta
+}
+
+func (m *Metric) SetFloat64(f float64) {
+	m.Value = &f
+}
+
+func (m *Metric) SetInt64(i int64) {
+	m.Delta = &i
+}
+
+func (m *Metric) Valid() error {
+	switch m.MType {
+	case "counter":
+		if m.Delta == nil {
+			return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricValue)
+		}
+	case "gauge":
+		if m.Value == nil {
+			return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricValue)
+		}
+	default:
+		return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricType)
+	}
+	return nil
 }
 
 func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {

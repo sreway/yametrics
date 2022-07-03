@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/stretchr/testify/assert"
@@ -8,14 +9,19 @@ import (
 	"testing"
 )
 
-func NewTestMemoryStorage(metricID, metricType, metricValue string) (MemoryStorage, error) {
+func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string) (MemoryStorage, error) {
 	metric, err := metrics.NewMetric(metricID, metricType, metricValue)
 	if err != nil {
 		return nil, err
 	}
-	testStorage := NewMemoryStorage()
 
-	err = testStorage.Save(metric)
+	testStorage, err := NewMemoryStorage(storageFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = testStorage.Save(context.Background(), metric)
 
 	if err != nil {
 		return nil, err
@@ -74,11 +80,12 @@ func Test_storage_Save(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	s := NewMemoryStorage()
+	s, err := NewMemoryStorage("")
+	assert.NoError(t, err)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			metric, _ := metrics.NewMetric(tt.args.metricID, tt.args.metricType, tt.args.metricValue)
-			if err := s.Save(metric); (err != nil) != tt.wantErr {
+			if err := s.Save(context.Background(), metric); (err != nil) != tt.wantErr {
 				t.Errorf("Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -156,20 +163,22 @@ func Test_storage_GetMetric(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	var memStorage Storage
+	var m Storage
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fields.storageData != (storageData{}) {
 				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
-					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)
+					tt.fields.storageData.metricType, tt.fields.storageData.metricValue, "")
 				assert.NoError(t, err)
-				memStorage = testStorage
+				m = testStorage
 			} else {
-				memStorage = NewMemoryStorage()
+				memStorage, err := NewMemoryStorage("")
+				assert.NoError(t, err)
+				m = memStorage
 			}
 
-			if _, err := memStorage.GetMetric(tt.args.metricType, tt.args.metricID); (err != nil) != tt.wantErr {
+			if _, err := m.GetMetric(context.Background(), tt.args.metricType, tt.args.metricID); (err != nil) != tt.wantErr {
 				t.Errorf("Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -216,7 +225,7 @@ func Test_storage_StoreMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
-				tt.fields.storageData.metricValue)
+				tt.fields.storageData.metricValue, tt.args.filePath)
 			assert.NoError(t, err)
 			fileObj, err := OpenTestFile(tt.args.filePath)
 			defer func() {
@@ -224,7 +233,7 @@ func Test_storage_StoreMetrics(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			assert.NoError(t, err)
-			tt.wantErr(t, s.StoreMetrics(fileObj), fmt.Sprintf("StoreMetrics(%v)", tt.args.filePath))
+			tt.wantErr(t, s.StoreMetrics(), fmt.Sprintf("StoreMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
 		})
 	}
@@ -270,22 +279,17 @@ func Test_storage_LoadMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
-				tt.fields.storageData.metricValue)
+				tt.fields.storageData.metricValue, tt.args.filePath)
 			assert.NoError(t, err)
-			fileObj, err := OpenTestFile(tt.args.filePath)
+			err = s.StoreMetrics()
 			assert.NoError(t, err)
-			err = s.StoreMetrics(fileObj)
+			err = s.Close()
 			assert.NoError(t, err)
-			err = fileObj.Close()
+			emptyStore, err := NewMemoryStorage(tt.args.filePath)
 			assert.NoError(t, err)
-			fileObjWithData, err := OpenTestFile(tt.args.filePath)
-			defer func() {
-				err = fileObjWithData.Close()
-				assert.NoError(t, err)
-			}()
-			assert.NoError(t, err)
-			tt.wantErr(t, s.LoadMetrics(fileObjWithData), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
+			tt.wantErr(t, emptyStore.LoadMetrics(), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
+			defer emptyStore.Close()
 
 		})
 	}
