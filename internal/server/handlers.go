@@ -284,13 +284,13 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// []metrics.Metric not work in tests?
-	//var stdout struct {
-	//	Metrics []metrics.Metric
-	//}
-	//stdout.Metrics = storageMetrics
+	//[]metrics.Metric not pass in tests ?
+	var stdout struct {
+		Metrics []metrics.Metric
+	}
+	stdout.Metrics = storageMetrics
 
-	if err := json.NewEncoder(w).Encode(&storageMetrics); err != nil {
+	if err := json.NewEncoder(w).Encode(&stdout); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("failed encode metric: %v", err)
 		return
