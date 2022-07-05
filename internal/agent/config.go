@@ -51,7 +51,7 @@ func newAgentConfig() (*agentConfig, error) {
 		return nil, fmt.Errorf("newAgentConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.ServerAddress)
 	}
 
-	cfg.metricEndpoint = fmt.Sprintf("http://%s/update/", cfg.ServerAddress)
+	cfg.metricEndpoint = fmt.Sprintf("http://%s/updates/", cfg.ServerAddress)
 	return &cfg, nil
 }
 

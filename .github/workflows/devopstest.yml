@@ -359,19 +359,19 @@ jobs:
 ## * Мы умеем сжимать контент по алгоритму gzip
 ## * Изменение в базе можно выполнять в рамках одной транзакции/одного запроса
 #
-#      - name: "Code increment #12"
-#        if: always()
-#        run: |
-#          SERVER_PORT=$(random unused-port)
-#          ADDRESS="localhost:${SERVER_PORT}"
-#          TEMP_FILE=$(random tempfile)
-#          devopstest -test.v -test.run=^TestIteration12$ \
-#            -source-path=. \
-#            -agent-binary-path=cmd/agent/agent \
-#            -binary-path=cmd/server/server \
-#            -server-port=$SERVER_PORT \
-#            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-#            -key="${TEMP_FILE}"
+      - name: "Code increment #12"
+        if: always()
+        run: |
+          SERVER_PORT=$(random unused-port)
+          ADDRESS="localhost:${SERVER_PORT}"
+          TEMP_FILE=$(random tempfile)
+          devopstest -test.v -test.run=^TestIteration12$ \
+            -source-path=. \
+            -agent-binary-path=cmd/agent/agent \
+            -binary-path=cmd/server/server \
+            -server-port=$SERVER_PORT \
+            -database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
+            -key="${TEMP_FILE}"
 #
 #
 ## XIII. Задание к тринадцатому инкременту.
@@ -379,13 +379,13 @@ jobs:
 ## * Добавьте механизмы обработки ошибок (там где это уместно)
 ## * Для формирования отладочных сообщений, используйте стандартный логгер или одну из популярных библиотек логгирования.
 ## * Не используйте функции fmt.Print* для вывода отладочной информации в коде сервера и агента
-#
-#      - name: "Code increment #13"
-#        if: always()
-#        run: |
-#          devopstest -test.v -test.run=^TestIteration13$ \
-#            -source-path=.
-#
+
+      - name: "Code increment #13"
+        if: always()
+        run: |
+          devopstest -test.v -test.run=^TestIteration13$ \
+            -source-path=.
+
 ## XIV. Задание к четыринадцатому инкременту.
 ## Агент:
 ## Перепланируйте архитектуру агента таким образом,

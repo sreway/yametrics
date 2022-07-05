@@ -104,6 +104,7 @@ func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, v
 	defer s.mu.RUnlock()
 	_ = ctx
 	*s.metrics.Counter[metricID].Delta = *s.metrics.Counter[metricID].Delta + value
+
 	return nil
 }
 
@@ -116,6 +117,39 @@ func (s *memoryStorage) Close() error {
 }
 
 func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	counterMetrics, err := s.metrics.GetMetrics("counter")
+
+	if err != nil {
+		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)
+	}
+
+	gaugeMetrics, err := s.metrics.GetMetrics("gauge")
+
+	if err != nil {
+		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)
+	}
+
+	for _, metric := range m {
+		switch metric.MType {
+		case "counter":
+			if _, exist := counterMetrics[metric.ID]; !exist {
+				counterMetrics[metric.ID] = metric
+			} else {
+				*counterMetrics[metric.ID].Delta += *metric.Delta
+			}
+		case "gauge":
+			gaugeMetrics[metric.ID] = metric
+		default:
+			return fmt.Errorf("memoryStorage_BatchMetrics: %err", metrics.ErrInvalidMetricType)
+		}
+	}
+
+	s.metrics.Counter = counterMetrics
+	s.metrics.Gauge = gaugeMetrics
+
 	return nil
 }
 

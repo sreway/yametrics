@@ -155,5 +155,48 @@ func (s *pgStorage) ValidateSchema(sourceMigrationsURL string) error {
 }
 
 func (s *pgStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
-	return nil
+	tx, err := s.connection.BeginTx(ctx, pgx.TxOptions{})
+
+	if err != nil {
+		return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil {
+			return
+		}
+	}()
+
+	if _, err := tx.Prepare(ctx, "update_gauge",
+		"INSERT INTO metrics (name, type, delta, value) VALUES ($1, $2, $3, $4) "+
+			"ON CONFLICT ON CONSTRAINT uniq_name_type DO UPDATE set delta=$3, value=$4"); err != nil {
+		return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
+	}
+
+	if _, err := tx.Prepare(ctx, "update_counter",
+		"INSERT INTO metrics (name, type, delta) VALUES ($1, $2, $3) "+
+			"ON CONFLICT ON CONSTRAINT uniq_name_type DO UPDATE set delta = $3 + metrics.delta"); err != nil {
+		return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
+	}
+
+	for _, metric := range m {
+		switch metric.MType {
+		case "counter":
+			_, err := tx.Exec(ctx, "update_counter", metric.ID, metric.MType, *metric.Delta)
+			if err != nil {
+				return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
+			}
+		case "gauge":
+			_, err := tx.Exec(ctx, "update_gauge",
+				metric.ID, metric.MType, metric.Int64Pointer(), metric.Float64Pointer())
+			if err != nil {
+				return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
+			}
+		default:
+			return fmt.Errorf("pgStorage_BatchMetrics: %w", metrics.ErrInvalidMetricType)
+		}
+	}
+
+	return tx.Commit(ctx)
 }

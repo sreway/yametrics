@@ -125,7 +125,6 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
-
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -156,7 +155,22 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(&m); err != nil {
+	storageMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
+
+	if err != nil {
+		switch {
+		case errors.Is(err, metrics.ErrInvalidMetricValue):
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, storage.ErrNotFoundMetric):
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+			log.Printf("get metric value: %v", err)
+		}
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(&storageMetric); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("failed encode metric: %v", err)
 		return
@@ -219,6 +233,67 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
+
 	var m []metrics.Metric
-	_ = s.batchMetrics(r.Context(), m)
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&m); err != nil {
+		log.Printf("can't decode body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err := s.batchMetrics(r.Context(), m, s.cfg.Key != "")
+
+	if err != nil {
+		switch {
+		case errors.Is(err, metrics.ErrInvalidMetricType):
+			log.Println("Server_BatchMetrics: invalid input metric type")
+			w.WriteHeader(http.StatusNotImplemented)
+		case errors.Is(err, metrics.ErrInvalidMetricValue):
+			log.Println("Server_BatchMetrics: invalid input metric value")
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, ErrInvalidMetricHash):
+			log.Println("Server_BatchMetrics: invalid input metric hash")
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			log.Println("Server_UpdateMetricJSON: err not implemented")
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+		return
+	}
+
+	storageMetrics, err := s.getMetricsList(r.Context(), s.cfg.Key != "")
+
+	if err != nil {
+		switch {
+		case errors.Is(err, metrics.ErrInvalidMetricType):
+			log.Println("Server_BatchMetrics: invalid input metric type")
+			w.WriteHeader(http.StatusNotImplemented)
+		case errors.Is(err, metrics.ErrInvalidMetricValue):
+			log.Println("Server_BatchMetrics: invalid input metric value")
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(err, ErrInvalidMetricHash):
+			log.Println("Server_BatchMetrics: invalid input metric hash")
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			log.Println("Server_UpdateMetricJSON: err not implemented")
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+	}
+
+	// []metrics.Metric not work in tests?
+	//var stdout struct {
+	//	Metrics []metrics.Metric
+	//}
+	//stdout.Metrics = storageMetrics
+
+	if err := json.NewEncoder(w).Encode(&storageMetrics); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("failed encode metric: %v", err)
+		return
+	}
+
 }

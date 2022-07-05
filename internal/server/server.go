@@ -162,7 +162,6 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 			switch {
 			case errors.Is(err, storage.ErrNotFoundMetric):
 				err := s.storage.Save(ctx, metric)
-				fmt.Println(err)
 				if err != nil {
 					return fmt.Errorf("Server_saveMetric error:%w", err)
 				}
@@ -218,6 +217,41 @@ func (s *server) getMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	return m, nil
 }
 
+func (s *server) getMetricsList(ctx context.Context, withHash bool) ([]metrics.Metric, error) {
+	m, err := s.storage.GetMetrics(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Server_getMetrics: %w", err)
+	}
+
+	countMetrics := len(m.Counter) + len(m.Gauge)
+	metricList := make([]metrics.Metric, 0, countMetrics)
+
+	for _, item := range m.Counter {
+		if withHash {
+			sign, err := item.CalcHash(s.cfg.Key)
+
+			if err != nil {
+				return nil, fmt.Errorf("Server_getMetricsList error:%w", err)
+			}
+			item.Hash = sign
+		}
+		metricList = append(metricList, item)
+	}
+
+	for _, item := range m.Gauge {
+		if withHash {
+			sign, err := item.CalcHash(s.cfg.Key)
+
+			if err != nil {
+				return nil, fmt.Errorf("Server_getMetricsList error:%w", err)
+			}
+			item.Hash = sign
+		}
+		metricList = append(metricList, item)
+	}
+
+	return metricList, nil
+}
 func (s *server) storeMetrics(ctx context.Context) {
 	tick := time.NewTicker(s.cfg.StoreInterval)
 	defer tick.Stop()
@@ -225,7 +259,9 @@ func (s *server) storeMetrics(ctx context.Context) {
 		select {
 		case <-tick.C:
 			err := s.storage.(storage.MemoryStorage).StoreMetrics()
-			log.Println(err)
+			if err != nil {
+				log.Println(err)
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -268,8 +304,26 @@ func (s *server) pingStorage(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric) error {
-	_ = ctx
-	fmt.Println(m)
+func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric, withHash bool) error {
+	if withHash {
+		for _, item := range m {
+			sign, err := item.CalcHash(s.cfg.Key)
+
+			if err != nil {
+				return fmt.Errorf("Server_batchMetric error:%w", err)
+			}
+
+			if sign != item.Hash {
+				return fmt.Errorf("Server_batchMetric error:%w", ErrInvalidMetricHash)
+			}
+		}
+	}
+
+	err := s.storage.BatchMetrics(ctx, m)
+
+	if err != nil {
+		return fmt.Errorf("Server_batchMetrics: %w", err)
+	}
+
 	return nil
 }
