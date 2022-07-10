@@ -64,6 +64,12 @@ type (
 		Counter map[string]Metric `json:"counter"`
 		Gauge   map[string]Metric `json:"gauge"`
 	}
+
+	ErrMetric struct {
+		MetricError error
+		MetricType  string
+		MetricID    string
+	}
 )
 
 func (c Counter) ToInt64() int64 {
@@ -125,7 +131,8 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 		mValue, err := strconv.ParseInt(metricValue, 10, 64)
 
 		if err != nil {
-			return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricValue)
+			return metric, fmt.Errorf("NewMetric: %w",
+				NewMetricError(metricType, metricID, ErrInvalidMetricValue))
 		}
 		metric.Delta = &mValue
 		return metric, nil
@@ -134,14 +141,16 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 		mValue, err := strconv.ParseFloat(metricValue, 64)
 
 		if err != nil {
-			return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricValue)
+			return metric, fmt.Errorf("NewMetric: %w",
+				NewMetricError(metricType, metricID, ErrInvalidMetricValue))
 		}
 		metric.Value = &mValue
 
 		return metric, nil
 
 	default:
-		return metric, fmt.Errorf("Metric_NewMetric error: %w", ErrInvalidMetricType)
+		return metric, fmt.Errorf("NewMetric: %w",
+			NewMetricError(metricType, metricID, ErrInvalidMetricType))
 	}
 }
 
@@ -194,14 +203,17 @@ func (m *Metric) Valid() error {
 	switch m.MType {
 	case "counter":
 		if m.Delta == nil {
-			return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricValue)
+			return fmt.Errorf("Metric_Valid: %w",
+				NewMetricError(m.MType, m.ID, ErrInvalidMetricValue))
 		}
 	case "gauge":
 		if m.Value == nil {
-			return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricValue)
+			return fmt.Errorf("Metric_Valid: %w",
+				NewMetricError(m.MType, m.ID, ErrInvalidMetricValue))
 		}
 	default:
-		return fmt.Errorf("Metric_Valid error: %w", ErrInvalidMetricType)
+		return fmt.Errorf("Metric_Valid: %w",
+			NewMetricError(m.MType, m.ID, ErrInvalidMetricType))
 	}
 	return nil
 }
@@ -213,7 +225,8 @@ func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
 	case "gauge":
 		return m.Gauge, nil
 	default:
-		return nil, fmt.Errorf("Metric_GetMetrics error: %w", ErrInvalidMetricType)
+		return nil, fmt.Errorf("Metrics_GetMetrics: %w",
+			NewMetricError(metricsType, "", ErrInvalidMetricType))
 	}
 }
 
@@ -225,11 +238,24 @@ func (m *Metric) CalcHash(key string) (string, error) {
 	case "gauge":
 		msg = fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value)
 	default:
-		return "", fmt.Errorf("Metric_CalcHash error: %w", ErrInvalidMetricType)
+		return "", fmt.Errorf("Metric_CalcHash: %w",
+			NewMetricError(m.MType, m.ID, ErrInvalidMetricType))
 	}
 
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(msg))
 	hash := h.Sum(nil)
 	return fmt.Sprintf("%x", hash), nil
+}
+
+func (e *ErrMetric) Error() string {
+	return fmt.Sprintf("[%s][%s] error %s", e.MetricType, e.MetricID, e.MetricError)
+}
+
+func NewMetricError(metricType, metricID string, err error) error {
+	return &ErrMetric{
+		MetricType:  metricType,
+		MetricID:    metricID,
+		MetricError: err,
+	}
 }

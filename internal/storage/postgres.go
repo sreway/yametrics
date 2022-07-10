@@ -92,7 +92,8 @@ func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 		case "gauge":
 			m.Gauge[v.ID] = v
 		default:
-			return nil, fmt.Errorf("Server_GetMetrics: %w", metrics.ErrInvalidMetricType)
+			return nil, fmt.Errorf("Server_GetMetrics: %w",
+				metrics.NewMetricError(v.MType, v.ID, metrics.ErrInvalidMetricType))
 		}
 	}
 
@@ -194,7 +195,8 @@ func (s *pgStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error 
 				return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
 			}
 		default:
-			return fmt.Errorf("pgStorage_BatchMetrics: %w", metrics.ErrInvalidMetricType)
+			return fmt.Errorf("pgStorage_BatchMetrics: %w",
+				metrics.NewMetricError(metric.MType, metric.ID, metrics.ErrInvalidMetricType))
 		}
 	}
 

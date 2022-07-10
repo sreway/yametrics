@@ -31,30 +31,16 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	m, err := metrics.NewMetric(metricName, metricType, metricValue)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			w.WriteHeader(http.StatusBadRequest)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_UpdateMetric: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
 	err = s.saveMetric(r.Context(), m, false)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, ErrInvalidMetricHash):
-			w.WriteHeader(http.StatusBadRequest)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_UpdateMetric: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
@@ -80,7 +66,7 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFS(templatesFS, templatePattern)
 
 	if err != nil {
-		log.Printf("parsing template error: %v", err)
+		log.Printf("Server_Index: parsing template error: %v", err)
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
@@ -102,24 +88,16 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	metric, err := s.getMetric(r.Context(), metricType, metricName, false)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, storage.ErrNotFoundMetric):
-			w.WriteHeader(http.StatusNotFound)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-			log.Printf("get metric value: %v", err)
-		}
+		log.Printf("Server_MetricValue: %s", err.Error())
+		ErrHandel(w, err)
+		return
 	}
 
 	_, err = w.Write([]byte(metric.GetStrValue()))
 
 	if err != nil {
 		w.WriteHeader(http.StatusNotImplemented)
-		log.Printf("get metric value: error write bytes response: %v", err)
+		log.Printf("Server_MetricValue: get metric value: error write bytes response: %v", err)
 	}
 }
 
@@ -130,7 +108,7 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&m); err != nil {
-		log.Printf("can't decode body: %v", err)
+		log.Printf("Server_UpdateMetricJSON: can't decode body: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -138,35 +116,16 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	err := s.saveMetric(r.Context(), m, s.cfg.Key != "")
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			log.Println("Server_UpdateMetricJSON: invalid input metric type")
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			log.Println("Server_UpdateMetricJSON: invalid input metric value")
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, ErrInvalidMetricHash):
-			log.Println("Server_UpdateMetricJSON: invalid input metric hash")
-			w.WriteHeader(http.StatusBadRequest)
-		default:
-			log.Println("Server_UpdateMetricJSON: err not implemented")
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_UpdateMetricJSON: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
 	storageMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, storage.ErrNotFoundMetric):
-			w.WriteHeader(http.StatusNotFound)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-			log.Printf("get metric value: %v", err)
-		}
+		log.Printf("Server_UpdateMetricJSON: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
@@ -184,7 +143,7 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&m); err != nil {
-		log.Printf("can't decode body: %v", err)
+		log.Printf("Server_MetricValueJSON: can't decode body: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -192,21 +151,14 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	sMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, storage.ErrNotFoundMetric):
-			w.WriteHeader(http.StatusNotFound)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-			log.Printf("get metric value: %v", err)
-		}
+		log.Printf("Server_MetricValueJSON: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(&sMetric); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("failed encode metric: %v", err)
+		log.Printf("Server_MetricValueJSON: failed encode metric: %v", err)
 		return
 	}
 
@@ -219,12 +171,8 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	err := s.pingStorage(ctx)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, storage.ErrStorageUnavailable):
-			w.WriteHeader(http.StatusInternalServerError)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_Ping: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
@@ -240,7 +188,7 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&m); err != nil {
-		log.Printf("can't decode body: %v", err)
+		log.Printf("Server_BatchMetrics: can't decode body: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -248,52 +196,60 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	err := s.batchMetrics(r.Context(), m, s.cfg.Key != "")
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			log.Println("Server_BatchMetrics: invalid input metric type")
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			log.Println("Server_BatchMetrics: invalid input metric value")
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, ErrInvalidMetricHash):
-			log.Println("Server_BatchMetrics: invalid input metric hash")
-			w.WriteHeader(http.StatusBadRequest)
-		default:
-			log.Println("Server_UpdateMetricJSON: err not implemented")
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_BatchMetrics: %s", err.Error())
+		ErrHandel(w, err)
 		return
 	}
 
 	storageMetrics, err := s.getMetricsList(r.Context(), s.cfg.Key != "")
 
 	if err != nil {
-		switch {
-		case errors.Is(err, metrics.ErrInvalidMetricType):
-			log.Println("Server_BatchMetrics: invalid input metric type")
-			w.WriteHeader(http.StatusNotImplemented)
-		case errors.Is(err, metrics.ErrInvalidMetricValue):
-			log.Println("Server_BatchMetrics: invalid input metric value")
-			w.WriteHeader(http.StatusBadRequest)
-		case errors.Is(err, ErrInvalidMetricHash):
-			log.Println("Server_BatchMetrics: invalid input metric hash")
-			w.WriteHeader(http.StatusBadRequest)
-		default:
-			log.Println("Server_UpdateMetricJSON: err not implemented")
-			w.WriteHeader(http.StatusNotImplemented)
-		}
+		log.Printf("Server_BatchMetrics: %s", err.Error())
+		ErrHandel(w, err)
+		return
 	}
 
-	//[]metrics.Metric not pass in tests ?
 	var stdout struct {
 		Metrics []metrics.Metric
 	}
 	stdout.Metrics = storageMetrics
-
 	if err := json.NewEncoder(w).Encode(&stdout); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("failed encode metric: %v", err)
 		return
+	}
+
+}
+
+func ErrHandel(w http.ResponseWriter, err error) {
+	var metricErr *metrics.ErrMetric
+
+	if err == nil {
+		return
+	}
+
+	if errors.As(err, &metricErr) {
+		switch {
+		case errors.Is(metricErr.MetricError, metrics.ErrInvalidMetricType):
+			w.WriteHeader(http.StatusNotImplemented)
+		case errors.Is(metricErr.MetricError, metrics.ErrInvalidMetricValue):
+			w.WriteHeader(http.StatusBadRequest)
+		case errors.Is(metricErr.MetricError, ErrInvalidMetricHash):
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+		return
+	}
+
+	switch {
+	case errors.Is(err, storage.ErrNotFoundMetric):
+		w.WriteHeader(http.StatusNotFound)
+	case errors.Is(err, storage.ErrStorageUnavailable):
+		w.WriteHeader(http.StatusInternalServerError)
+	default:
+		w.WriteHeader(http.StatusNotImplemented)
 	}
 
 }

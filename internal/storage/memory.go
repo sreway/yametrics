@@ -143,7 +143,8 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 		case "gauge":
 			gaugeMetrics[metric.ID] = metric
 		default:
-			return fmt.Errorf("memoryStorage_BatchMetrics: %err", metrics.ErrInvalidMetricType)
+			return fmt.Errorf("memoryStorage_BatchMetrics: %err",
+				metrics.NewMetricError(metric.MType, metric.ID, metrics.ErrInvalidMetricType))
 		}
 	}
 

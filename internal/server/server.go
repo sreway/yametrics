@@ -21,11 +21,11 @@ var (
 	ErrInvalidStorage    = errors.New("invalid storage")
 )
 
-type Server interface {
-	Start()
-}
-
 type (
+	Server interface {
+		Start()
+	}
+
 	server struct {
 		httpServer *http.Server
 		storage    storage.Storage
@@ -151,7 +151,8 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 		}
 
 		if sign != metric.Hash {
-			return fmt.Errorf("Server_saveMetric error:%w", ErrInvalidMetricHash)
+			return fmt.Errorf("Server_saveMetric error:%w",
+				metrics.NewMetricError(metric.MType, metric.ID, ErrInvalidMetricHash))
 		}
 	}
 	switch metric.IsCounter() {
@@ -314,7 +315,8 @@ func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric, withHash 
 			}
 
 			if sign != item.Hash {
-				return fmt.Errorf("Server_batchMetric error:%w", ErrInvalidMetricHash)
+				return fmt.Errorf("Server_batchMetric error:%w",
+					metrics.NewMetricError(item.MType, item.ID, ErrInvalidMetricHash))
 			}
 		}
 	}
