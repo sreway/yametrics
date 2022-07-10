@@ -138,14 +138,12 @@ func (s *server) Start() {
 func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash bool) error {
 
 	err := metric.Valid()
-
 	if err != nil {
 		return fmt.Errorf("Server_saveMetric: %w", err)
 	}
 
 	if withHash {
 		sign, err := metric.CalcHash(s.cfg.Key)
-
 		if err != nil {
 			return fmt.Errorf("Server_saveMetric error:%w", err)
 		}
@@ -158,7 +156,6 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 	switch metric.IsCounter() {
 	case true:
 		_, err := s.storage.GetMetric(ctx, metric.MType, metric.ID)
-
 		if err != nil {
 			switch {
 			case errors.Is(err, storage.ErrNotFoundMetric):
@@ -215,6 +212,7 @@ func (s *server) getMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Server_getMetrics: %w", err)
 	}
+
 	return m, nil
 }
 
@@ -289,7 +287,6 @@ func (s *server) InitStorage(ctx context.Context) error {
 	}
 
 	memStorage, err := storage.NewMemoryStorage(s.cfg.StoreFile)
-
 	if err != nil {
 		return fmt.Errorf("Server_InitStorage: %w", err)
 	}
@@ -309,7 +306,6 @@ func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric, withHash 
 	if withHash {
 		for _, item := range m {
 			sign, err := item.CalcHash(s.cfg.Key)
-
 			if err != nil {
 				return fmt.Errorf("Server_batchMetric error:%w", err)
 			}
@@ -322,7 +318,6 @@ func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric, withHash 
 	}
 
 	err := s.storage.BatchMetrics(ctx, m)
-
 	if err != nil {
 		return fmt.Errorf("Server_batchMetrics: %w", err)
 	}

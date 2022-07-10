@@ -59,13 +59,11 @@ func newServerConfig() (*serverConfig, error) {
 	}
 
 	_, port, err := net.SplitHostPort(cfg.Address)
-
 	if err != nil {
 		return nil, fmt.Errorf("newServerConfig: %w invalid address %s", ErrInvalidConfig, cfg.Address)
 	}
 
 	_, err = strconv.Atoi(port)
-
 	if err != nil {
 		return nil, fmt.Errorf("newServerConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.Address)
 	}
@@ -76,13 +74,11 @@ func newServerConfig() (*serverConfig, error) {
 func WithAddr(address string) OptionServer {
 	return func(cfg *serverConfig) error {
 		_, port, err := net.SplitHostPort(address)
-
 		if err != nil {
 			return fmt.Errorf("WithAddr: %w invalid address %s", ErrInvalidConfigOps, address)
 		}
 
 		_, err = strconv.Atoi(port)
-
 		if err != nil {
 			return fmt.Errorf("WithAddr: %w invalid port %s", ErrInvalidConfigOps, address)
 		}

@@ -125,7 +125,6 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	for index, metric := range m {
 		if withHash {
 			sign, err := metric.CalcHash(a.Config.Key)
-
 			if err != nil {
 				return fmt.Errorf("Agent_SendToSever error: %w", err)
 			}
@@ -139,13 +138,11 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	}
 
 	request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
-
 	if err != nil {
 		return fmt.Errorf("failed create request: %v", err)
 	}
 	request.Header.Add("Content-Type", "application/json")
 	response, err := a.httpClient.Do(request)
-
 	if err != nil {
 		return fmt.Errorf("failed send request: %v", err)
 	}

@@ -63,18 +63,16 @@ func (s *memoryStorage) StoreMetrics() error {
 	defer s.mu.RUnlock()
 
 	err := s.fileObj.Truncate(0)
-
 	if err != nil {
 		return fmt.Errorf("%w cat't truncate file", ErrStoreMetrics)
 	}
-	_, err = s.fileObj.Seek(0, 0)
 
+	_, err = s.fileObj.Seek(0, 0)
 	if err != nil {
 		return fmt.Errorf("%w cat't seek file", ErrStoreMetrics)
 	}
 
 	m, err := s.GetMetrics(context.Background())
-
 	if err != nil {
 		return fmt.Errorf("memoryStorage_GetMetrics: %err", err)
 	}
@@ -82,6 +80,7 @@ func (s *memoryStorage) StoreMetrics() error {
 	if err := json.NewEncoder(s.fileObj).Encode(m); err != nil {
 		return fmt.Errorf("%w: cant't encode metrics", ErrStoreMetrics)
 	}
+
 	log.Println("success save metrics to file")
 
 	return nil
@@ -94,6 +93,7 @@ func (s *memoryStorage) LoadMetrics() error {
 	if err := json.NewDecoder(s.fileObj).Decode(&s.metrics); err != nil {
 		return fmt.Errorf("%w: cant't decode metrics", ErrLoadMetrics)
 	}
+
 	log.Printf("success load metrics")
 
 	return nil
@@ -113,6 +113,7 @@ func (s *memoryStorage) Close() error {
 	if err != nil {
 		return fmt.Errorf("memoryStorage_Close: %w", err)
 	}
+
 	return nil
 }
 
@@ -121,13 +122,11 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 	defer s.mu.Unlock()
 
 	counterMetrics, err := s.metrics.GetMetrics("counter")
-
 	if err != nil {
 		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)
 	}
 
 	gaugeMetrics, err := s.metrics.GetMetrics("gauge")
-
 	if err != nil {
 		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)
 	}

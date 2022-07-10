@@ -36,17 +36,17 @@ func newAgentConfig() (*agentConfig, error) {
 		PollInterval:   PollIntervalDefault,
 		Key:            KeyDefault,
 	}
+
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %v", err)
 	}
-	_, port, err := net.SplitHostPort(cfg.ServerAddress)
 
+	_, port, err := net.SplitHostPort(cfg.ServerAddress)
 	if err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %w invalid address %s", ErrInvalidConfig, cfg.ServerAddress)
 	}
 
 	_, err = strconv.Atoi(port)
-
 	if err != nil {
 		return nil, fmt.Errorf("newAgentConfig: %w invalid port %s", ErrInvalidConfigOps, cfg.ServerAddress)
 	}
@@ -61,6 +61,7 @@ func WithPollInterval(poolInterval string) OptionAgent {
 		if err != nil {
 			return fmt.Errorf("WithPollInterval: %w: %s", ErrInvalidConfigOps, poolInterval)
 		}
+
 		cfg.PollInterval = poolIntervalDuration
 		return nil
 	}
@@ -72,6 +73,7 @@ func WithReportInterval(reportInterval string) OptionAgent {
 		if err != nil {
 			return fmt.Errorf("WithReportInterval: %w: %s", ErrInvalidConfigOps, reportInterval)
 		}
+
 		cfg.ReportInterval = reportIntervalDuration
 		return nil
 	}

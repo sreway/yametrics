@@ -58,13 +58,12 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sMetrics, err := s.getMetrics(r.Context())
-
 	if err != nil {
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
-	tmpl, err := template.ParseFS(templatesFS, templatePattern)
 
+	tmpl, err := template.ParseFS(templatesFS, templatePattern)
 	if err != nil {
 		log.Printf("Server_Index: parsing template error: %v", err)
 		w.WriteHeader(http.StatusNotImplemented)
@@ -72,7 +71,6 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = tmpl.Execute(w, sMetrics)
-
 	if err != nil {
 		log.Printf("index error: %v", err)
 		w.WriteHeader(http.StatusNotImplemented)
@@ -86,7 +84,6 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "metricType")
 
 	metric, err := s.getMetric(r.Context(), metricType, metricName, false)
-
 	if err != nil {
 		log.Printf("Server_MetricValue: %s", err.Error())
 		ErrHandel(w, err)
@@ -94,7 +91,6 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = w.Write([]byte(metric.GetStrValue()))
-
 	if err != nil {
 		w.WriteHeader(http.StatusNotImplemented)
 		log.Printf("Server_MetricValue: get metric value: error write bytes response: %v", err)
@@ -114,7 +110,6 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := s.saveMetric(r.Context(), m, s.cfg.Key != "")
-
 	if err != nil {
 		log.Printf("Server_UpdateMetricJSON: %s", err.Error())
 		ErrHandel(w, err)
@@ -122,7 +117,6 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	storageMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
-
 	if err != nil {
 		log.Printf("Server_UpdateMetricJSON: %s", err.Error())
 		ErrHandel(w, err)
@@ -149,7 +143,6 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sMetric, err := s.getMetric(r.Context(), m.MType, m.ID, s.cfg.Key != "")
-
 	if err != nil {
 		log.Printf("Server_MetricValueJSON: %s", err.Error())
 		ErrHandel(w, err)
@@ -169,7 +162,6 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	err := s.pingStorage(ctx)
-
 	if err != nil {
 		log.Printf("Server_Ping: %s", err.Error())
 		ErrHandel(w, err)
@@ -194,7 +186,6 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := s.batchMetrics(r.Context(), m, s.cfg.Key != "")
-
 	if err != nil {
 		log.Printf("Server_BatchMetrics: %s", err.Error())
 		ErrHandel(w, err)

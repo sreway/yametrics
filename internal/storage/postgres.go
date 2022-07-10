@@ -42,7 +42,6 @@ func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) 
 
 	q := fmt.Sprintf("SELECT delta, value FROM metrics WHERE name = '%s' and type = '%s'", metricID, metricType)
 	err := s.connection.QueryRow(ctx, q).Scan(&m.Delta, &m.Value)
-
 	if err != nil {
 		var pgErr *pgconn.PgError
 		switch {
@@ -71,7 +70,6 @@ func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	}
 
 	rows, err := s.connection.Query(ctx, "SELECT name, type, delta, value FROM metrics")
-
 	if err != nil {
 		return nil, fmt.Errorf("Server_GetMetrics: %w", err)
 	}
@@ -81,7 +79,6 @@ func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	for rows.Next() {
 		var v metrics.Metric
 		err = rows.Scan(&v.ID, &v.MType, &v.Delta, &v.Value)
-
 		if err != nil {
 			return nil, fmt.Errorf("Server_GetMetrics: %w", err)
 		}
@@ -98,7 +95,6 @@ func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	}
 
 	err = rows.Err()
-
 	if err != nil {
 		return nil, fmt.Errorf("Server_GetMetrics: %w", err)
 	}
@@ -157,7 +153,6 @@ func (s *pgStorage) ValidateSchema(sourceMigrationsURL string) error {
 
 func (s *pgStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
 	tx, err := s.connection.BeginTx(ctx, pgx.TxOptions{})
-
 	if err != nil {
 		return fmt.Errorf("pgStorage_BatchMetrics: %w", err)
 	}
