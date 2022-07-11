@@ -153,12 +153,14 @@ func TestMetric_CalcHash(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m, err := NewMetric(tt.fields.ID, tt.fields.MType, tt.fields.MValue)
 			assert.NoError(t, err)
+			got := m.CalcHash(tt.args.key)
 
-			got, err := m.CalcHash(tt.args.key)
-			assert.NoError(t, err)
-			if got != tt.want && tt.wantErr == false {
-				t.Errorf("CalcHash() got = %v, want %v", got, tt.want)
-				return
+			if tt.wantErr {
+				assert.NotEqualf(t, got, tt.want, "CalcHash() got = %s, want %s", got, tt.want)
+			}
+
+			if !tt.wantErr {
+				assert.Equal(t, got, tt.want, "CalcHash() got = %s, want %s", got, tt.want)
 			}
 
 		})

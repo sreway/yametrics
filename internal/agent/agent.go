@@ -124,11 +124,7 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 
 	for index, metric := range m {
 		if withHash {
-			sign, err := metric.CalcHash(a.Config.Key)
-			if err != nil {
-				return fmt.Errorf("Agent_SendToSever error: %w", err)
-			}
-
+			sign := metric.CalcHash(a.Config.Key)
 			m[index].Hash = sign
 		}
 	}

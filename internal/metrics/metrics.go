@@ -70,6 +70,9 @@ type (
 		MetricType  string
 		MetricID    string
 	}
+	MetricValue interface {
+		float64 | int64
+	}
 )
 
 func (c Counter) ToInt64() int64 {
@@ -230,22 +233,31 @@ func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
 	}
 }
 
-func (m *Metric) CalcHash(key string) (string, error) {
+func calcHash[T MetricValue](key, metricID, metricType string, metricValue T) string {
 	var msg string
-	switch m.MType {
-	case "counter":
-		msg = fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta)
-	case "gauge":
-		msg = fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value)
-	default:
-		return "", fmt.Errorf("Metric_CalcHash: %w",
-			NewMetricError(m.MType, m.ID, ErrInvalidMetricType))
+
+	intValue, ok := any(metricValue).(int64)
+	if ok {
+		msg = fmt.Sprintf("%s:%s:%d", metricID, metricType, intValue)
+	}
+
+	floatValue, ok := any(metricValue).(float64)
+	if ok {
+		msg = fmt.Sprintf("%s:%s:%f", metricID, metricType, floatValue)
 	}
 
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(msg))
 	hash := h.Sum(nil)
-	return fmt.Sprintf("%x", hash), nil
+	return fmt.Sprintf("%x", hash)
+}
+
+func (m *Metric) CalcHash(key string) string {
+	if m.IsCounter() {
+		return calcHash[int64](key, m.ID, m.MType, *m.Delta)
+	}
+
+	return calcHash[float64](key, m.ID, m.MType, *m.Value)
 }
 
 func (e *ErrMetric) Error() string {

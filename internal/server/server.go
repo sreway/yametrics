@@ -143,10 +143,7 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 	}
 
 	if withHash {
-		sign, err := metric.CalcHash(s.cfg.Key)
-		if err != nil {
-			return fmt.Errorf("Server_saveMetric error:%w", err)
-		}
+		sign := metric.CalcHash(s.cfg.Key)
 
 		if sign != metric.Hash {
 			return fmt.Errorf("Server_saveMetric error:%w",
@@ -196,11 +193,7 @@ func (s *server) getMetric(ctx context.Context, metricType, metricName string, w
 	}
 
 	if withHash {
-		sign, err := m.CalcHash(s.cfg.Key)
-
-		if err != nil {
-			return metrics.Metric{}, fmt.Errorf("Server_getMetric error:%w", err)
-		}
+		sign := m.CalcHash(s.cfg.Key)
 		m.Hash = sign
 	}
 
@@ -227,11 +220,7 @@ func (s *server) getMetricsList(ctx context.Context, withHash bool) ([]metrics.M
 
 	for _, item := range m.Counter {
 		if withHash {
-			sign, err := item.CalcHash(s.cfg.Key)
-
-			if err != nil {
-				return nil, fmt.Errorf("Server_getMetricsList error:%w", err)
-			}
+			sign := item.CalcHash(s.cfg.Key)
 			item.Hash = sign
 		}
 		metricList = append(metricList, item)
@@ -239,11 +228,7 @@ func (s *server) getMetricsList(ctx context.Context, withHash bool) ([]metrics.M
 
 	for _, item := range m.Gauge {
 		if withHash {
-			sign, err := item.CalcHash(s.cfg.Key)
-
-			if err != nil {
-				return nil, fmt.Errorf("Server_getMetricsList error:%w", err)
-			}
+			sign := item.CalcHash(s.cfg.Key)
 			item.Hash = sign
 		}
 		metricList = append(metricList, item)
@@ -305,10 +290,11 @@ func (s *server) pingStorage(ctx context.Context) error {
 func (s *server) batchMetrics(ctx context.Context, m []metrics.Metric, withHash bool) error {
 	if withHash {
 		for _, item := range m {
-			sign, err := item.CalcHash(s.cfg.Key)
+			err := item.Valid()
 			if err != nil {
-				return fmt.Errorf("Server_batchMetric error:%w", err)
+				return fmt.Errorf("Server_batchMetrics: %w", err)
 			}
+			sign := item.CalcHash(s.cfg.Key)
 
 			if sign != item.Hash {
 				return fmt.Errorf("Server_batchMetric error:%w",
