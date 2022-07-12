@@ -52,7 +52,7 @@ func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 		select {
 		case <-tick.C:
 			exposeMetrics := a.collector.ExposeMetrics()
-			err := a.SendToSever(exposeMetrics)
+			err := a.SendToSever(exposeMetrics, a.Config.Key != "")
 
 			if err != nil {
 				log.Printf("agent send error: %v", err)
@@ -80,14 +80,8 @@ func (a *agent) Start() {
 		for {
 			s := <-systemSignals
 			switch s {
-			case syscall.SIGINT:
-				log.Println("signal interrupt triggered.")
-				exitChan <- 0
-			case syscall.SIGTERM:
-				log.Println("signal terminate triggered.")
-				exitChan <- 0
-			case syscall.SIGQUIT:
-				log.Println("signal quit triggered.")
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+				log.Println("signal triggered.")
 				exitChan <- 0
 			default:
 				log.Println("unknown signal.")
@@ -121,33 +115,38 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
-func (a *agent) SendToSever(metrics []metrics.Metric) error {
-	for _, metric := range metrics {
-		var body bytes.Buffer
+func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
+	var body bytes.Buffer
 
-		if err := json.NewEncoder(&body).Encode(&metric); err != nil {
-			return fmt.Errorf("failed encode metric: %v", err)
-		}
+	if len(m) == 0 {
+		return nil
+	}
 
-		request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
-
-		if err != nil {
-			return fmt.Errorf("failed create request: %v", err)
-		}
-
-		request.Header.Add("Content-Type", "application/json")
-
-		response, err := a.httpClient.Do(request)
-
-		if err != nil {
-			return fmt.Errorf("failed send request: %v", err)
-		}
-
-		err = response.Body.Close()
-
-		if err != nil {
-			return fmt.Errorf("failed close response body: %v", err)
+	for index, metric := range m {
+		if withHash {
+			sign := metric.CalcHash(a.Config.Key)
+			m[index].Hash = sign
 		}
 	}
+
+	if err := json.NewEncoder(&body).Encode(&m); err != nil {
+		return fmt.Errorf("failed encode metric: %v", err)
+	}
+
+	request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
+	if err != nil {
+		return fmt.Errorf("failed create request: %v", err)
+	}
+	request.Header.Add("Content-Type", "application/json")
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("failed send request: %v", err)
+	}
+
+	err = response.Body.Close()
+	if err != nil {
+		return fmt.Errorf("failed close response body: %v", err)
+	}
+
 	return nil
 }

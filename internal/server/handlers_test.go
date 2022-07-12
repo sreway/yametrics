@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/sreway/yametrics/internal/metrics"
@@ -35,9 +36,13 @@ func NewTestMemoryStorage(metricID, metricType, metricValue string) (storage.Sto
 	if err != nil {
 		return nil, err
 	}
-	testStorage := storage.NewMemoryStorage()
+	testStorage, err := storage.NewMemoryStorage("")
 
-	err = testStorage.Save(metric)
+	if err != nil {
+		return nil, err
+	}
+
+	err = testStorage.Save(context.Background(), metric)
 
 	if err != nil {
 		return nil, err
@@ -117,11 +122,14 @@ func Test_server_UpdateMetric(t *testing.T) {
 		},
 	}
 
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage(cfg.StoreFile)
+	assert.NoError(t, err)
 	s := &server{
 		nil,
-		storage.NewMemoryStorage(),
-		nil,
-		nil,
+		store,
+		cfg,
 	}
 
 	for _, tt := range tests {
@@ -252,12 +260,14 @@ func Test_server_MetricValue(t *testing.T) {
 			},
 		},
 	}
-
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage(cfg.StoreFile)
+	assert.NoError(t, err)
 	s := &server{
 		nil,
-		storage.NewMemoryStorage(),
-		nil,
-		nil,
+		store,
+		cfg,
 	}
 
 	for _, tt := range tests {
@@ -395,12 +405,14 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 			},
 		},
 	}
-
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage(cfg.StoreFile)
+	assert.NoError(t, err)
 	s := &server{
 		nil,
-		storage.NewMemoryStorage(),
-		nil,
-		nil,
+		store,
+		cfg,
 	}
 
 	for _, tt := range tests {
@@ -527,11 +539,13 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			},
 		},
 	}
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+
 	s := &server{
 		nil,
 		nil,
-		nil,
-		nil,
+		cfg,
 	}
 
 	for _, tt := range tests {
@@ -543,7 +557,8 @@ func Test_server_MetricValueJSON(t *testing.T) {
 				assert.NoError(t, err)
 				s.storage = testStorage
 			} else {
-				s.storage = storage.NewMemoryStorage()
+				s.storage, err = storage.NewMemoryStorage(s.cfg.StoreFile)
+				assert.NoError(t, err)
 			}
 
 			r := chi.NewRouter()
