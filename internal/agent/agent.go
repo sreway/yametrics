@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/sreway/yametrics/internal/collector"
 	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"net/http"
@@ -17,26 +19,46 @@ import (
 
 type Agent interface {
 	Start()
-	Collect(ctx context.Context, wg *sync.WaitGroup)
+	CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup)
 	Send(ctx context.Context, wg *sync.WaitGroup)
 }
 
 type agent struct {
-	collector  Collector
+	collector  collector.Collector
 	httpClient http.Client
 	Config     *agentConfig
 }
 
-func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
+func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.PollInterval)
 	defer tick.Stop()
+
 	for {
 		select {
 		case <-tick.C:
-			a.collector.CollectMetrics()
+			a.collector.CollectRuntimeMetrics()
+
 		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
+	wg.Add(1)
+	defer wg.Done()
+	cpuUsage := make(chan collector.Gauge)
+
+	go CollectCPUInfo(ctx, wg, cpuUsage)
+
+	for {
+		select {
+		case cpuData := <-cpuUsage:
+			a.collector.CollectUtilMetrics(cpuData)
+		case <-ctx.Done():
+			close(cpuUsage)
 			return
 		}
 	}
@@ -74,7 +96,9 @@ func (a *agent) Start() {
 	exitChan := make(chan int)
 	wg := new(sync.WaitGroup)
 
-	go a.Collect(ctx, wg)
+	go a.CollectRuntimeMetrics(ctx, wg)
+	go a.CollectUtilMetrics(ctx, wg)
+
 	go a.Send(ctx, wg)
 	go func() {
 		for {
@@ -109,7 +133,7 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}
 
 	return &agent{
-		collector:  NewCollector(),
+		collector:  collector.NewCollector(),
 		Config:     agentCfg,
 		httpClient: http.Client{},
 	}, nil
@@ -149,4 +173,23 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	}
 
 	return nil
+}
+
+func getCPUInfo() collector.Gauge {
+	percent, _ := cpu.Percent(10*time.Second, false)
+	return collector.Gauge(percent[0])
+}
+
+func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, cpuUsage chan collector.Gauge) {
+	wg.Add(1)
+	defer wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			cpuUsage <- getCPUInfo()
+		}
+	}
 }

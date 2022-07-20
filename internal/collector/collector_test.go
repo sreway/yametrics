@@ -1,7 +1,6 @@
-package agent
+package collector
 
 import (
-	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -9,7 +8,7 @@ import (
 
 func Test_collector_ExposeMetrics(t *testing.T) {
 	type fields struct {
-		metrics *metrics.RuntimeMetrics
+		metrics *Metrics
 	}
 	tests := []struct {
 		name   string
@@ -18,7 +17,7 @@ func Test_collector_ExposeMetrics(t *testing.T) {
 		{
 			name: "expose counter metric",
 			fields: fields{
-				metrics: &metrics.RuntimeMetrics{
+				metrics: &Metrics{
 					PollCount: 10,
 				},
 			},
@@ -27,7 +26,7 @@ func Test_collector_ExposeMetrics(t *testing.T) {
 		{
 			name: "expose gause metric",
 			fields: fields{
-				metrics: &metrics.RuntimeMetrics{
+				metrics: &Metrics{
 					OtherSys: 884128,
 				},
 			},
@@ -46,7 +45,7 @@ func Test_collector_ExposeMetrics(t *testing.T) {
 
 func Test_collector_CollectMetrics(t *testing.T) {
 	type fields struct {
-		metrics *metrics.RuntimeMetrics
+		metrics *Metrics
 	}
 	tests := []struct {
 		name   string
@@ -55,7 +54,7 @@ func Test_collector_CollectMetrics(t *testing.T) {
 		{
 			name: "collect metric",
 			fields: fields{
-				metrics: new(metrics.RuntimeMetrics),
+				metrics: new(Metrics),
 			},
 		},
 	}
@@ -65,7 +64,7 @@ func Test_collector_CollectMetrics(t *testing.T) {
 				metrics: tt.fields.metrics,
 				mu:      sync.RWMutex{},
 			}
-			c.CollectMetrics()
+			c.CollectRuntimeMetrics()
 			assert.NotZero(t, c.metrics.PollCount)
 			assert.NotZero(t, c.metrics.RandomValue)
 			assert.NotZero(t, c.metrics.OtherSys)

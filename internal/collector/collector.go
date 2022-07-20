@@ -1,4 +1,4 @@
-package agent
+package collector
 
 import (
 	"github.com/sreway/yametrics/internal/metrics"
@@ -6,21 +6,34 @@ import (
 	"sync"
 )
 
-type Collector interface {
-	CollectMetrics()
-	ExposeMetrics() []metrics.Metric
-	ClearPollCounter()
-}
+type (
+	Collector interface {
+		CollectRuntimeMetrics()
+		CollectUtilMetrics(cpuUtilization Gauge)
+		ExposeMetrics() []metrics.Metric
+		ClearPollCounter()
+	}
+	collector struct {
+		metrics *Metrics
+		mu      sync.RWMutex
+	}
+)
 
-type collector struct {
-	metrics *metrics.RuntimeMetrics
-	mu      sync.RWMutex
-}
-
-func (c *collector) CollectMetrics() {
+func (c *collector) CollectRuntimeMetrics() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.metrics.Collect()
+	c.metrics.CollectRuntimeMetrics()
+}
+
+func (c *collector) CollectUtilMetrics(cpuUtilization Gauge) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.metrics.CollectMemmoryMetrics()
+	c.SetCPUutilization(cpuUtilization)
+}
+
+func (c *collector) SetCPUutilization(cpuUtilization Gauge) {
+	c.metrics.CPUutilization1 = cpuUtilization
 }
 
 func (c *collector) ExposeMetrics() []metrics.Metric {
@@ -36,11 +49,11 @@ func (c *collector) ExposeMetrics() []metrics.Metric {
 		}
 		switch metricsElements.Field(i).Type().Name() {
 		case "Gauge":
-			metricValue := metricsElements.Field(i).Interface().(metrics.Gauge).ToFloat64()
+			metricValue := metricsElements.Field(i).Interface().(Gauge).ToFloat64()
 			exposeMetric.MType = "gauge"
 			exposeMetric.Value = &metricValue
 		case "Counter":
-			metricValue := metricsElements.Field(i).Interface().(metrics.Counter).ToInt64()
+			metricValue := metricsElements.Field(i).Interface().(Counter).ToInt64()
 			exposeMetric.MType = "counter"
 			exposeMetric.Delta = &metricValue
 		}
@@ -59,7 +72,7 @@ func (c *collector) ClearPollCounter() {
 
 func NewCollector() Collector {
 	return &collector{
-		new(metrics.RuntimeMetrics),
+		new(Metrics),
 		sync.RWMutex{},
 	}
 }
