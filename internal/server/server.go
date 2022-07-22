@@ -57,7 +57,7 @@ func NewServer(opts ...OptionServer) (Server, error) {
 
 func (s *server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
-	systemSignals := make(chan os.Signal)
+	systemSignals := make(chan os.Signal, 1)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 
