@@ -13,8 +13,9 @@ import (
 
 func (s *memoryStorage) UnmarshalJSON(data []byte) error {
 	tmpData := new(metrics.Metrics)
-	if err := json.Unmarshal(data, &tmpData); err != nil {
-		return err
+	err := json.Unmarshal(data, &tmpData)
+	if err != nil {
+		return fmt.Errorf("Storage_UnmarshalJSON")
 	}
 	return nil
 }
