@@ -548,9 +548,9 @@ func Test_server_MetricValueJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fields.storageData != (storageData{}) {
-				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
+				testStorage, terr := NewTestMemoryStorage(tt.fields.storageData.metricID,
 					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)
-				assert.NoError(t, err)
+				assert.NoError(t, terr)
 				s.storage = testStorage
 			} else {
 				s.storage, err = storage.NewMemoryStorage(s.cfg.StoreFile)
@@ -563,7 +563,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			defer ts.Close()
 			resp, _ := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-			err := resp.Body.Close()
+			err = resp.Body.Close()
 			require.NoError(t, err)
 		})
 	}

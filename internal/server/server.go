@@ -69,7 +69,7 @@ func (s *server) Start() {
 	switch s.storage.(type) {
 	case storage.MemoryStorage:
 		if s.cfg.Restore {
-			err := s.loadMetrics()
+			err = s.loadMetrics()
 			if err != nil {
 				log.Println(err)
 			}
@@ -80,7 +80,7 @@ func (s *server) Start() {
 		}
 
 	case storage.PgStorage:
-		if err := s.storage.(storage.PgStorage).ValidateSchema(SourceMigrationsURL); err != nil {
+		if err = s.storage.(storage.PgStorage).ValidateSchema(SourceMigrationsURL); err != nil {
 			log.Fatalln(err)
 		}
 	default:
@@ -94,7 +94,7 @@ func (s *server) Start() {
 		s.initRoutes(r)
 		s.httpServer.Handler = r
 
-		err := s.httpServer.ListenAndServe()
+		err = s.httpServer.ListenAndServe()
 		if err != nil {
 			log.Printf("server start: %v", err)
 			systemSignals <- syscall.SIGSTOP
@@ -109,7 +109,7 @@ func (s *server) Start() {
 				log.Println("signal triggered.")
 				if store, ok := s.storage.(storage.MemoryStorage); ok {
 					if s.cfg.StoreFile != "" {
-						err := store.StoreMetrics()
+						err = store.StoreMetrics()
 						if err != nil {
 							log.Println(err)
 						}
@@ -155,7 +155,7 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 		if err != nil {
 			switch {
 			case errors.Is(err, storage.ErrNotFoundMetric):
-				err := s.storage.Save(ctx, metric)
+				err = s.storage.Save(ctx, metric)
 				if err != nil {
 					return fmt.Errorf("Server_saveMetric error:%w", err)
 				}
