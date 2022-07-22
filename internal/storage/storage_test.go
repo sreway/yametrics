@@ -3,10 +3,11 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/stretchr/testify/assert"
 )
 
 func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string) (MemoryStorage, error) {
@@ -16,7 +17,6 @@ func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string)
 	}
 
 	testStorage, err := NewMemoryStorage(storageFile)
-
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string)
 
 func OpenTestFile(path string) (*os.File, error) {
 	flag := os.O_RDWR | os.O_CREATE
-	fileObj, err := os.OpenFile(path, flag, 0644)
+	fileObj, err := os.OpenFile(path, flag, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileObj: can't open file %s", path)
 	}
@@ -290,7 +290,6 @@ func Test_storage_LoadMetrics(t *testing.T) {
 			tt.wantErr(t, emptyStore.LoadMetrics(), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
 			defer emptyStore.Close()
-
 		})
 	}
 }

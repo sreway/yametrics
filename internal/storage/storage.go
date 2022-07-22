@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"errors"
+	"os"
+	"sync"
+
 	//nolint:nolintlint
 	_ "github.com/golang-migrate/migrate/v4/database/pgx"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v4"
 	"github.com/sreway/yametrics/internal/metrics"
-	"os"
-	"sync"
 )
 
 var (

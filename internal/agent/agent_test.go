@@ -1,10 +1,11 @@
 package agent
 
 import (
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/stretchr/testify/require"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -65,7 +66,6 @@ func Test_agent_SendToSever(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := NewTestHTTPClient(func(req *http.Request) *http.Response {
-
 				return &http.Response{
 					StatusCode: 200,
 				}

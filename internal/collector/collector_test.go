@@ -1,9 +1,10 @@
 package collector
 
 import (
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_collector_ExposeMetrics(t *testing.T) {

@@ -1,8 +1,9 @@
 package metrics
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMetric_CalcHash(t *testing.T) {
@@ -78,7 +79,6 @@ func TestMetric_CalcHash(t *testing.T) {
 			if !tt.wantErr {
 				assert.Equal(t, got, tt.want, "CalcHash() got = %s, want %s", got, tt.want)
 			}
-
 		})
 	}
 }

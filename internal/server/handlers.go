@@ -5,13 +5,14 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/sreway/yametrics/internal/storage"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
 )
 
 var (
@@ -29,7 +30,6 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	metricValue := chi.URLParam(r, "metricValue")
 
 	m, err := metrics.NewMetric(metricName, metricType, metricValue)
-
 	if err != nil {
 		log.Printf("Server_UpdateMetric: %s", err.Error())
 		ErrHandel(w, err)
@@ -75,7 +75,6 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 		log.Printf("index error: %v", err)
 		w.WriteHeader(http.StatusNotImplemented)
 	}
-
 }
 
 func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +153,6 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Server_MetricValueJSON: failed encode metric: %v", err)
 		return
 	}
-
 }
 
 func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
@@ -169,11 +167,9 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
-
 	var m []metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
@@ -193,7 +189,6 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	storageMetrics, err := s.getMetricsList(r.Context(), s.cfg.Key != "")
-
 	if err != nil {
 		log.Printf("Server_BatchMetrics: %s", err.Error())
 		ErrHandel(w, err)
@@ -209,7 +204,6 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed encode metric: %v", err)
 		return
 	}
-
 }
 
 func ErrHandel(w http.ResponseWriter, err error) {
@@ -242,5 +236,4 @@ func ErrHandel(w http.ResponseWriter, err error) {
 	default:
 		w.WriteHeader(http.StatusNotImplemented)
 	}
-
 }

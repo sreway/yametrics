@@ -3,16 +3,17 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/sreway/yametrics/internal/storage"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
@@ -37,7 +38,6 @@ func NewTestMemoryStorage(metricID, metricType, metricValue string) (storage.Sto
 		return nil, err
 	}
 	testStorage, err := storage.NewMemoryStorage("")
-
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,6 @@ func Test_server_UpdateMetric(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			r := chi.NewRouter()
 			s.initRoutes(r)
@@ -272,7 +271,6 @@ func Test_server_MetricValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if tt.fields.storageData != (storageData{}) {
 				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
 					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)
@@ -417,7 +415,6 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if tt.fields.storageData != (storageData{}) {
 				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
 					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)
@@ -550,7 +547,6 @@ func Test_server_MetricValueJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if tt.fields.storageData != (storageData{}) {
 				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
 					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)

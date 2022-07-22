@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 func (s *memoryStorage) UnmarshalJSON(data []byte) error {
@@ -23,7 +24,6 @@ func (s *memoryStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	defer s.mu.Unlock()
 	_ = ctx
 	storageMetrics, err := s.metrics.GetMetrics(metric.MType)
-
 	if err != nil {
 		return fmt.Errorf("Storage_Save:%w", err)
 	}
@@ -38,7 +38,6 @@ func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName st
 	defer s.mu.RUnlock()
 	_ = ctx
 	storageMetrics, err := s.metrics.GetMetrics(metricType)
-
 	if err != nil {
 		return nil, fmt.Errorf("Storage_GetMetric:%w", err)
 	}
@@ -50,7 +49,6 @@ func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName st
 	}
 
 	return &metric, nil
-
 }
 
 func (s *memoryStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
@@ -154,7 +152,6 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 }
 
 func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
-
 	s := &memoryStorage{
 		metrics.Metrics{
 			Counter: make(map[string]metrics.Metric),
@@ -177,7 +174,7 @@ func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
 
 func OpenStorageFile(path string) (*os.File, error) {
 	flag := os.O_RDWR | os.O_CREATE
-	fileObj, err := os.OpenFile(path, flag, 0644)
+	fileObj, err := os.OpenFile(path, flag, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("NewServer: can't open file %s", path)
 	}

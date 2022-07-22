@@ -2,11 +2,12 @@ package collector
 
 import (
 	"fmt"
-	"github.com/shirou/gopsutil/v3/mem"
 	"math/rand"
 	"reflect"
 	"runtime"
 	"strconv"
+
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type (
@@ -87,7 +88,6 @@ func (m *Metrics) CollectMemmoryMetrics() {
 //	m.CPUutilization1 = Gauge(getCPUutilization(10 * time.Second))
 func ParseCounter(s string) (Counter, error) {
 	n, err := strconv.Atoi(s)
-
 	if err != nil {
 		return 0, fmt.Errorf("fnParseCounter: can't parse: %v", err)
 	}
@@ -97,7 +97,6 @@ func ParseCounter(s string) (Counter, error) {
 
 func ParseGause(s string) (Gauge, error) {
 	n, err := strconv.ParseFloat(s, 64)
-
 	if err != nil {
 		return 0, fmt.Errorf("fnParseGause: can't parse: %v", err)
 	}

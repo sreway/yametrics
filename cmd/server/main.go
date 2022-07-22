@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/sreway/yametrics/internal/server"
 	"log"
+
+	"github.com/sreway/yametrics/internal/server"
 )
 
 func main() {

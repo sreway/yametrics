@@ -1,9 +1,10 @@
 package collector
 
 import (
-	"github.com/sreway/yametrics/internal/metrics"
 	"reflect"
 	"sync"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 type (

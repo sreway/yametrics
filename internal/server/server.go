@@ -4,16 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/sreway/yametrics/internal/storage"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
 )
 
 var (
@@ -61,7 +62,6 @@ func (s *server) Start() {
 	exitChan := make(chan int)
 
 	err := s.InitStorage(ctx)
-
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -136,7 +136,6 @@ func (s *server) Start() {
 }
 
 func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash bool) error {
-
 	err := metric.Valid()
 	if err != nil {
 		return fmt.Errorf("Server_saveMetric: %w", err)
@@ -236,6 +235,7 @@ func (s *server) getMetricsList(ctx context.Context, withHash bool) ([]metrics.M
 
 	return metricList, nil
 }
+
 func (s *server) storeMetrics(ctx context.Context) {
 	tick := time.NewTicker(s.cfg.StoreInterval)
 	defer tick.Stop()
@@ -280,6 +280,7 @@ func (s *server) InitStorage(ctx context.Context) error {
 
 	return nil
 }
+
 func (s *server) pingStorage(ctx context.Context) error {
 	if err := s.storage.(storage.PgStorage).Ping(ctx); err != nil {
 		return fmt.Errorf("Server_pingStorage error: %w", err)

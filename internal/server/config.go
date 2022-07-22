@@ -3,10 +3,11 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/caarlos0/env/v6"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type (
@@ -42,7 +43,6 @@ var (
 )
 
 func newServerConfig() (*serverConfig, error) {
-
 	cfg := serverConfig{
 		Address:       AddressDefault,
 		StoreInterval: StoreIntervalDefault,

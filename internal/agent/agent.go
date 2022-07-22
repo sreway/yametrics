@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/sreway/yametrics/internal/collector"
-	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +12,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/sreway/yametrics/internal/collector"
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 type Agent interface {

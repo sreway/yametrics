@@ -46,7 +46,6 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 	switch metricType {
 	case "counter":
 		mValue, err := strconv.ParseInt(metricValue, 10, 64)
-
 		if err != nil {
 			return metric, fmt.Errorf("NewMetric: %w",
 				NewMetricError(metricType, metricID, ErrInvalidMetricValue))
@@ -56,7 +55,6 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 
 	case "gauge":
 		mValue, err := strconv.ParseFloat(metricValue, 64)
-
 		if err != nil {
 			return metric, fmt.Errorf("NewMetric: %w",
 				NewMetricError(metricType, metricID, ErrInvalidMetricValue))
