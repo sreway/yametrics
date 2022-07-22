@@ -101,7 +101,7 @@ func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, v
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	_ = ctx
-	*s.metrics.Counter[metricID].Delta = *s.metrics.Counter[metricID].Delta + value
+	*s.metrics.Counter[metricID].Delta += value
 
 	return nil
 }
