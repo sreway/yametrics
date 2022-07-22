@@ -47,10 +47,10 @@ func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) 
 		case errors.Is(err, pgx.ErrNoRows):
 			return nil, fmt.Errorf("pgStorage_GetMetric: %w", ErrNotFoundMetric)
 		case errors.As(err, &pgErr):
-			switch pgErr.Code {
-			case "42703":
+			if pgErr.Code == "42703" {
 				return nil, fmt.Errorf("pgStorage_GetMetric: %w", ErrNotFoundMetric)
 			}
+			return nil, fmt.Errorf("pgStorage_GetMetric: %w", err)
 		default:
 			return nil, fmt.Errorf("pgStorage_GetMetric: %w", err)
 		}
