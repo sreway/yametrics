@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	//nolint:nolintlint
 	_ "github.com/golang-migrate/migrate/v4/database/pgx"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v4"
