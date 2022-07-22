@@ -155,22 +155,22 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	}
 
 	if err := json.NewEncoder(&body).Encode(&m); err != nil {
-		return fmt.Errorf("failed encode metric: %v", err)
+		return fmt.Errorf("failed encode metric: %w", err)
 	}
 
 	request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
 	if err != nil {
-		return fmt.Errorf("failed create request: %v", err)
+		return fmt.Errorf("failed create request: %w", err)
 	}
 	request.Header.Add("Content-Type", "application/json")
 	response, err := a.httpClient.Do(request)
 	if err != nil {
-		return fmt.Errorf("failed send request: %v", err)
+		return fmt.Errorf("failed send request: %w", err)
 	}
 
 	err = response.Body.Close()
 	if err != nil {
-		return fmt.Errorf("failed close response body: %v", err)
+		return fmt.Errorf("failed close response body: %w", err)
 	}
 
 	return nil

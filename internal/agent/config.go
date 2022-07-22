@@ -39,7 +39,7 @@ func newAgentConfig() (*agentConfig, error) {
 	}
 
 	if err := env.Parse(&cfg); err != nil {
-		return nil, fmt.Errorf("newAgentConfig: %v", err)
+		return nil, fmt.Errorf("newAgentConfig: %w", err)
 	}
 
 	_, port, err := net.SplitHostPort(cfg.ServerAddress)

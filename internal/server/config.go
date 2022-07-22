@@ -55,7 +55,7 @@ func newServerConfig() (*serverConfig, error) {
 	}
 
 	if err := env.Parse(&cfg); err != nil {
-		return nil, fmt.Errorf("newServerConfig: %v", err)
+		return nil, fmt.Errorf("newServerConfig: %w", err)
 	}
 
 	_, port, err := net.SplitHostPort(cfg.Address)

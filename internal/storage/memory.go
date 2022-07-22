@@ -72,7 +72,7 @@ func (s *memoryStorage) StoreMetrics() error {
 
 	m, err := s.GetMetrics(context.Background())
 	if err != nil {
-		return fmt.Errorf("memoryStorage_GetMetrics: %err", err)
+		return fmt.Errorf("memoryStorage_GetMetrics: %w", err)
 	}
 
 	if err := json.NewEncoder(s.fileObj).Encode(m); err != nil {
@@ -140,7 +140,7 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 		case "gauge":
 			gaugeMetrics[metric.ID] = metric
 		default:
-			return fmt.Errorf("memoryStorage_BatchMetrics: %err",
+			return fmt.Errorf("memoryStorage_BatchMetrics: %w",
 				metrics.NewMetricError(metric.MType, metric.ID, metrics.ErrInvalidMetricType))
 		}
 	}

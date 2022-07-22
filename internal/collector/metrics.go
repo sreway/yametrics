@@ -89,7 +89,7 @@ func (m *Metrics) CollectMemmoryMetrics() {
 func ParseCounter(s string) (Counter, error) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("fnParseCounter: can't parse: %v", err)
+		return 0, fmt.Errorf("fnParseCounter: can't parse: %w", err)
 	}
 
 	return Counter(n), nil
@@ -98,7 +98,7 @@ func ParseCounter(s string) (Counter, error) {
 func ParseGause(s string) (Gauge, error) {
 	n, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, fmt.Errorf("fnParseGause: can't parse: %v", err)
+		return 0, fmt.Errorf("fnParseGause: can't parse: %w", err)
 	}
 
 	return Gauge(n), nil
