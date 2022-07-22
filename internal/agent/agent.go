@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
+
 	"github.com/sreway/yametrics/internal/collector"
 	"github.com/sreway/yametrics/internal/metrics"
 )

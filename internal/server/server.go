@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/sreway/yametrics/internal/storage"
 )

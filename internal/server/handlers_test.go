@@ -9,10 +9,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/sreway/yametrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) *http.Response {

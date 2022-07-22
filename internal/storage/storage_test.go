@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string) (MemoryStorage, error) {

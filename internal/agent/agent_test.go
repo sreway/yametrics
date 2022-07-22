@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sreway/yametrics/internal/metrics"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response

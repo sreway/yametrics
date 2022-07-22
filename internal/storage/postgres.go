@@ -9,6 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
+
 	"github.com/sreway/yametrics/internal/metrics"
 )
 
