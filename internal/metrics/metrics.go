@@ -13,6 +13,11 @@ var (
 	ErrInvalidMetricType  = errors.New("invalid metric type")
 )
 
+const (
+	CounterStrName = "counter"
+	GaugeStrName   = "gauge"
+)
+
 type (
 	Metric struct {
 		ID    string   `json:"id" db:"name"`
@@ -44,7 +49,7 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 	metric.MType = metricType
 
 	switch metricType {
-	case "counter":
+	case CounterStrName:
 		mValue, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			return metric, fmt.Errorf("NewMetric: %w",
@@ -53,7 +58,7 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 		metric.Delta = &mValue
 		return metric, nil
 
-	case "gauge":
+	case GaugeStrName:
 		mValue, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			return metric, fmt.Errorf("NewMetric: %w",
@@ -75,9 +80,9 @@ func (m Metric) IsCounter() bool {
 
 func (m Metric) GetStrValue() string {
 	switch m.MType {
-	case "counter":
+	case CounterStrName:
 		return fmt.Sprintf("%v", *m.Delta)
-	case "gauge":
+	case GaugeStrName:
 		return fmt.Sprintf("%v", *m.Value)
 	default:
 		return ""
@@ -116,12 +121,12 @@ func (m *Metric) SetInt64(i int64) {
 
 func (m *Metric) Valid() error {
 	switch m.MType {
-	case "counter":
+	case CounterStrName:
 		if m.Delta == nil {
 			return fmt.Errorf("Metric_Valid: %w",
 				NewMetricError(m.MType, m.ID, ErrInvalidMetricValue))
 		}
-	case "gauge":
+	case GaugeStrName:
 		if m.Value == nil {
 			return fmt.Errorf("Metric_Valid: %w",
 				NewMetricError(m.MType, m.ID, ErrInvalidMetricValue))
@@ -135,9 +140,9 @@ func (m *Metric) Valid() error {
 
 func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
 	switch metricsType {
-	case "counter":
+	case CounterStrName:
 		return m.Counter, nil
-	case "gauge":
+	case GaugeStrName:
 		return m.Gauge, nil
 	default:
 		return nil, fmt.Errorf("Metrics_GetMetrics: %w",

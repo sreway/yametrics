@@ -131,13 +131,13 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 
 	for _, metric := range m {
 		switch metric.MType {
-		case "counter":
+		case metrics.CounterStrName:
 			if _, exist := counterMetrics[metric.ID]; !exist {
 				counterMetrics[metric.ID] = metric
 			} else {
 				*counterMetrics[metric.ID].Delta += *metric.Delta
 			}
-		case "gauge":
+		case metrics.GaugeStrName:
 			gaugeMetrics[metric.ID] = metric
 		default:
 			return fmt.Errorf("memoryStorage_BatchMetrics: %w",
