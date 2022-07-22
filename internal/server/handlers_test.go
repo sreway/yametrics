@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,20 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path, body string) *http.Response {
 	reader := strings.NewReader(body)
 	url := fmt.Sprintf("%s%s", ts.URL, path)
 	req := httptest.NewRequest(method, url, reader)
 	req.RequestURI = ""
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
 	err = resp.Body.Close()
 	require.NoError(t, err)
 
-	return resp, string(respBody)
+	return resp
 }
 
 func NewTestMemoryStorage(metricID, metricType, metricValue string) (storage.Storage, error) {
@@ -138,7 +134,7 @@ func Test_server_UpdateMetric(t *testing.T) {
 			s.initRoutes(r)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
-			resp, _ := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			err := resp.Body.Close()
 			require.NoError(t, err)
@@ -282,7 +278,7 @@ func Test_server_MetricValue(t *testing.T) {
 			s.initRoutes(r)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
-			resp, _ := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			err := resp.Body.Close()
 			require.NoError(t, err)
@@ -426,7 +422,7 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 			s.initRoutes(r)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
-			resp, _ := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			err := resp.Body.Close()
 			require.NoError(t, err)
@@ -561,7 +557,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			s.initRoutes(r)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
-			resp, _ := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			err = resp.Body.Close()
 			require.NoError(t, err)
