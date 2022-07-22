@@ -66,7 +66,7 @@ func (s *server) Start() {
 		log.Fatalln(err)
 	}
 
-	switch st := s.storage.(type) {
+	switch t := s.storage.(type) {
 	case storage.MemoryStorage:
 		if s.cfg.Restore {
 			err = s.loadMetrics()
@@ -78,8 +78,9 @@ func (s *server) Start() {
 		if s.cfg.StoreInterval != 0 {
 			go s.storeMetrics(ctx)
 		}
+
 	case storage.PgStorage:
-		if err = st.ValidateSchema(SourceMigrationsURL); err != nil {
+		if err = t.ValidateSchema(SourceMigrationsURL); err != nil {
 			log.Fatalln(err)
 		}
 	default:
