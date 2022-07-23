@@ -126,7 +126,7 @@ func (s *server) Start() {
 	exitCode := <-exitChan
 	cancel()
 
-	err = s.storage.Close()
+	err = s.storage.Close(ctx)
 
 	if err != nil {
 		log.Fatalln(err)

@@ -38,7 +38,7 @@ type (
 		GetMetrics(ctx context.Context) (*metrics.Metrics, error)
 		IncrementCounter(ctx context.Context, metricID string, value int64) error
 		BatchMetrics(ctx context.Context, m []metrics.Metric) error
-		Close() error
+		Close(ctx context.Context) error
 	}
 
 	MemoryStorage interface {

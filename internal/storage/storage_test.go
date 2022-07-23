@@ -279,18 +279,19 @@ func Test_storage_LoadMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
 				tt.fields.storageData.metricValue, tt.args.filePath)
 			assert.NoError(t, err)
 			err = s.StoreMetrics()
 			assert.NoError(t, err)
-			err = s.Close()
+			err = s.Close(ctx)
 			assert.NoError(t, err)
 			emptyStore, err := NewMemoryStorage(tt.args.filePath)
 			assert.NoError(t, err)
 			tt.wantErr(t, emptyStore.LoadMetrics(), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
-			defer emptyStore.Close()
+			defer emptyStore.Close(ctx)
 		})
 	}
 }

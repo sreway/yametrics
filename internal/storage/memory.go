@@ -107,7 +107,8 @@ func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, v
 	return nil
 }
 
-func (s *memoryStorage) Close() error {
+func (s *memoryStorage) Close(ctx context.Context) error {
+	_ = ctx
 	err := s.fileObj.Close()
 	if err != nil {
 		return fmt.Errorf("memoryStorage_Close: %w", err)
@@ -119,7 +120,7 @@ func (s *memoryStorage) Close() error {
 func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
+	_ = ctx
 	counterMetrics, err := s.metrics.GetMetrics("counter")
 	if err != nil {
 		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)

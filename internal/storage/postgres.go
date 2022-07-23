@@ -118,9 +118,8 @@ func (s *pgStorage) Ping(ctx context.Context) error {
 	return nil
 }
 
-// Нужно ли закрывать https://pkg.go.dev/database/sql#Open ?
-func (s *pgStorage) Close() error {
-	if err := s.connection.Close(context.Background()); err != nil {
+func (s *pgStorage) Close(ctx context.Context) error {
+	if err := s.connection.Close(ctx); err != nil {
 		return fmt.Errorf("pgStorage_Close: %w", err)
 	}
 	return nil
