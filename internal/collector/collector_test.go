@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,7 +36,6 @@ func Test_collector_ExposeMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &collector{
 				metrics: tt.fields.metrics,
-				mu:      sync.RWMutex{},
 			}
 			assert.NotZero(t, c.ExposeMetrics())
 		})
@@ -63,7 +61,6 @@ func Test_collector_CollectMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &collector{
 				metrics: tt.fields.metrics,
-				mu:      sync.RWMutex{},
 			}
 			c.CollectRuntimeMetrics()
 			assert.NotZero(t, c.metrics.PollCount)

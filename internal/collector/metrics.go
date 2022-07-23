@@ -6,6 +6,9 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"sync"
+
+	"github.com/sreway/yametrics/internal/metrics"
 
 	"github.com/shirou/gopsutil/v3/mem"
 )
@@ -47,6 +50,7 @@ type (
 		CPUutilization1 Gauge
 		PollCount       Counter
 		RandomValue     Gauge
+		mu              sync.RWMutex
 	}
 )
 
@@ -58,10 +62,12 @@ func (g Gauge) ToFloat64() float64 {
 	return float64(g)
 }
 
-// rename to runtime
 func (m *Metrics) CollectRuntimeMetrics() {
 	memStats := new(runtime.MemStats)
 	runtime.ReadMemStats(memStats)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	memStatsElements := reflect.ValueOf(memStats).Elem()
 	metricsElements := reflect.ValueOf(m).Elem()
 
@@ -81,11 +87,54 @@ func (m *Metrics) CollectRuntimeMetrics() {
 
 func (m *Metrics) CollectMemmoryMetrics() {
 	memStats, _ := mem.VirtualMemory()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.TotalMemory = Gauge(memStats.Total)
 	m.FreeMemory = Gauge(memStats.Free)
 }
 
-//	m.CPUutilization1 = Gauge(getCPUutilization(10 * time.Second))
+func (m *Metrics) SetCPUutilization(cpuUtilization Gauge) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.CPUutilization1 = cpuUtilization
+}
+
+func (m *Metrics) ExposeMetrics() []metrics.Metric {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	metricsElements := reflect.ValueOf(m).Elem()
+	exposeMetrics := make([]metrics.Metric, 0, metricsElements.NumField())
+
+	for i := 0; i < metricsElements.NumField(); i++ {
+		exposeMetric := metrics.Metric{
+			ID: metricsElements.Type().Field(i).Name,
+		}
+		switch metricsElements.Field(i).Type().Name() {
+		case "Gauge":
+			metricValue := metricsElements.Field(i).Interface().(Gauge).ToFloat64()
+			exposeMetric.MType = "gauge"
+			exposeMetric.Value = &metricValue
+		case "Counter":
+			metricValue := metricsElements.Field(i).Interface().(Counter).ToInt64()
+			exposeMetric.MType = "counter"
+			exposeMetric.Delta = &metricValue
+		default:
+			continue
+		}
+
+		exposeMetrics = append(exposeMetrics, exposeMetric)
+	}
+
+	return exposeMetrics
+}
+
+func (m *Metrics) ClearPollCounter() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.PollCount = 0
+}
+
 func ParseCounter(s string) (Counter, error) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
