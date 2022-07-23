@@ -50,15 +50,16 @@ func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cpuUsage := make(chan collector.Gauge)
+	stopCh := make(chan struct{})
 
-	go CollectCPUInfo(ctx, wg, cpuUsage)
+	go CollectCPUInfo(ctx, wg, cpuUsage, stopCh)
 
 	for {
 		select {
 		case cpuData := <-cpuUsage:
 			a.collector.CollectUtilMetrics(cpuData)
 		case <-ctx.Done():
-			close(cpuUsage)
+			close(stopCh)
 			return
 		}
 	}
@@ -179,15 +180,23 @@ func getCPUInfo() collector.Gauge {
 	return collector.Gauge(percent[0])
 }
 
-func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, cpuUsage chan collector.Gauge) {
+func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, dataCh chan collector.Gauge, stopCh chan struct{}) {
 	defer wg.Done()
 
 	for {
+		// try exit early
+		select {
+		case <-stopCh:
+			return
+		default:
+		}
+
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			cpuUsage <- getCPUInfo()
+		case <-stopCh:
+			return
+		case dataCh <- getCPUInfo():
 		}
 	}
 }
