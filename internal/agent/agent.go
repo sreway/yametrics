@@ -32,7 +32,6 @@ type agent struct {
 }
 
 func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.PollInterval)
 	defer tick.Stop()
@@ -49,7 +48,6 @@ func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
 	defer wg.Done()
 	cpuUsage := make(chan collector.Gauge)
 
@@ -67,7 +65,6 @@ func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.ReportInterval)
 	defer tick.Stop()
@@ -97,7 +94,7 @@ func (a *agent) Start() {
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 	wg := new(sync.WaitGroup)
-
+	wg.Add(4)
 	go a.CollectRuntimeMetrics(ctx, wg)
 	go a.CollectUtilMetrics(ctx, wg)
 
@@ -183,7 +180,6 @@ func getCPUInfo() collector.Gauge {
 }
 
 func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, cpuUsage chan collector.Gauge) {
-	wg.Add(1)
 	defer wg.Done()
 
 	for {
