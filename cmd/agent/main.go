@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/sreway/yametrics/internal/agent"
 	"log"
+
+	"github.com/sreway/yametrics/internal/agent"
 )
 
 func init() {
@@ -20,7 +21,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 
 	cli.Start()
 }

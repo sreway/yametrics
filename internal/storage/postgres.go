@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
+
 	"github.com/sreway/yametrics/internal/metrics"
-	"log"
 )
 
 func NewPgStorage(ctx context.Context, dsn string) (PgStorage, error) {
@@ -36,9 +38,7 @@ func (s *pgStorage) Save(ctx context.Context, metric metrics.Metric) error {
 }
 
 func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) (*metrics.Metric, error) {
-	var (
-		m metrics.Metric
-	)
+	var m metrics.Metric
 
 	q := fmt.Sprintf("SELECT delta, value FROM metrics WHERE name = '%s' and type = '%s'", metricID, metricType)
 	err := s.connection.QueryRow(ctx, q).Scan(&m.Delta, &m.Value)
@@ -48,10 +48,10 @@ func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) 
 		case errors.Is(err, pgx.ErrNoRows):
 			return nil, fmt.Errorf("pgStorage_GetMetric: %w", ErrNotFoundMetric)
 		case errors.As(err, &pgErr):
-			switch pgErr.Code {
-			case "42703":
+			if pgErr.Code == "42703" {
 				return nil, fmt.Errorf("pgStorage_GetMetric: %w", ErrNotFoundMetric)
 			}
+			return nil, fmt.Errorf("pgStorage_GetMetric: %w", err)
 		default:
 			return nil, fmt.Errorf("pgStorage_GetMetric: %w", err)
 		}
@@ -63,7 +63,6 @@ func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) 
 }
 
 func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
-
 	m := metrics.Metrics{
 		Counter: make(map[string]metrics.Metric),
 		Gauge:   make(map[string]metrics.Metric),
@@ -110,7 +109,6 @@ func (s *pgStorage) IncrementCounter(ctx context.Context, metricID string, value
 	}
 
 	return nil
-
 }
 
 func (s *pgStorage) Ping(ctx context.Context) error {
@@ -120,9 +118,8 @@ func (s *pgStorage) Ping(ctx context.Context) error {
 	return nil
 }
 
-// Нужно ли закрывать https://pkg.go.dev/database/sql#Open ?
-func (s *pgStorage) Close() error {
-	if err := s.connection.Close(context.Background()); err != nil {
+func (s *pgStorage) Close(ctx context.Context) error {
+	if err := s.connection.Close(ctx); err != nil {
 		return fmt.Errorf("pgStorage_Close: %w", err)
 	}
 	return nil
@@ -133,7 +130,6 @@ func (s *pgStorage) ValidateSchema(sourceMigrationsURL string) error {
 	migrateURL := fmt.Sprintf("pgx://%s:%s@%s:%d/%s",
 		config.User, config.Password, config.Host, config.Port, config.Database)
 	m, err := migrate.New(sourceMigrationsURL, migrateURL)
-
 	if err != nil {
 		return fmt.Errorf("pgStorage_ValidateSchema: %w", err)
 	}

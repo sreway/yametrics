@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"net/http"
 	"os"
@@ -13,37 +12,60 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+
+	"github.com/sreway/yametrics/internal/collector"
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 type Agent interface {
 	Start()
-	Collect(ctx context.Context, wg *sync.WaitGroup)
+	CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup)
 	Send(ctx context.Context, wg *sync.WaitGroup)
 }
 
 type agent struct {
-	collector  Collector
+	collector  collector.Collector
 	httpClient http.Client
 	Config     *agentConfig
 }
 
-func (a *agent) Collect(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
+func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.PollInterval)
 	defer tick.Stop()
+
 	for {
 		select {
 		case <-tick.C:
-			a.collector.CollectMetrics()
+			a.collector.CollectRuntimeMetrics()
+
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
+func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	cpuUsage := make(chan collector.Gauge)
+	stopCh := make(chan struct{})
+
+	go CollectCPUInfo(ctx, wg, cpuUsage, stopCh)
+
+	for {
+		select {
+		case cpuData := <-cpuUsage:
+			a.collector.CollectUtilMetrics(cpuData)
+		case <-ctx.Done():
+			close(stopCh)
+			return
+		}
+	}
+}
+
 func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(1)
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.ReportInterval)
 	defer tick.Stop()
@@ -69,12 +91,14 @@ func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 func (a *agent) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	systemSignals := make(chan os.Signal)
+	systemSignals := make(chan os.Signal, 1)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 	wg := new(sync.WaitGroup)
+	wg.Add(4)
+	go a.CollectRuntimeMetrics(ctx, wg)
+	go a.CollectUtilMetrics(ctx, wg)
 
-	go a.Collect(ctx, wg)
 	go a.Send(ctx, wg)
 	go func() {
 		for {
@@ -109,7 +133,7 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}
 
 	return &agent{
-		collector:  NewCollector(),
+		collector:  collector.NewCollector(),
 		Config:     agentCfg,
 		httpClient: http.Client{},
 	}, nil
@@ -130,23 +154,49 @@ func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	}
 
 	if err := json.NewEncoder(&body).Encode(&m); err != nil {
-		return fmt.Errorf("failed encode metric: %v", err)
+		return fmt.Errorf("failed encode metric: %w", err)
 	}
 
 	request, err := http.NewRequest(http.MethodPost, a.Config.metricEndpoint, &body)
 	if err != nil {
-		return fmt.Errorf("failed create request: %v", err)
+		return fmt.Errorf("failed create request: %w", err)
 	}
 	request.Header.Add("Content-Type", "application/json")
 	response, err := a.httpClient.Do(request)
 	if err != nil {
-		return fmt.Errorf("failed send request: %v", err)
+		return fmt.Errorf("failed send request: %w", err)
 	}
 
 	err = response.Body.Close()
 	if err != nil {
-		return fmt.Errorf("failed close response body: %v", err)
+		return fmt.Errorf("failed close response body: %w", err)
 	}
 
 	return nil
+}
+
+func getCPUInfo() collector.Gauge {
+	percent, _ := cpu.Percent(10*time.Second, false)
+	return collector.Gauge(percent[0])
+}
+
+func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, dataCh chan collector.Gauge, stopCh chan struct{}) {
+	defer wg.Done()
+
+	for {
+		// try exit early
+		select {
+		case <-stopCh:
+			return
+		default:
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-stopCh:
+			return
+		case dataCh <- getCPUInfo():
+		}
+	}
 }

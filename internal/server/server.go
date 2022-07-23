@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/sreway/yametrics/internal/storage"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/sreway/yametrics/internal/metrics"
+	"github.com/sreway/yametrics/internal/storage"
 )
 
 var (
@@ -56,20 +58,19 @@ func NewServer(opts ...OptionServer) (Server, error) {
 
 func (s *server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
-	systemSignals := make(chan os.Signal)
+	systemSignals := make(chan os.Signal, 1)
 	signal.Notify(systemSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	exitChan := make(chan int)
 
 	err := s.InitStorage(ctx)
-
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	switch s.storage.(type) {
+	switch t := s.storage.(type) {
 	case storage.MemoryStorage:
 		if s.cfg.Restore {
-			err := s.loadMetrics()
+			err = s.loadMetrics()
 			if err != nil {
 				log.Println(err)
 			}
@@ -80,12 +81,11 @@ func (s *server) Start() {
 		}
 
 	case storage.PgStorage:
-		if err := s.storage.(storage.PgStorage).ValidateSchema(SourceMigrationsURL); err != nil {
+		if err = t.ValidateSchema(SourceMigrationsURL); err != nil {
 			log.Fatalln(err)
 		}
 	default:
 		log.Fatalln(ErrInvalidStorage)
-
 	}
 
 	go func() {
@@ -94,7 +94,7 @@ func (s *server) Start() {
 		s.initRoutes(r)
 		s.httpServer.Handler = r
 
-		err := s.httpServer.ListenAndServe()
+		err = s.httpServer.ListenAndServe()
 		if err != nil {
 			log.Printf("server start: %v", err)
 			systemSignals <- syscall.SIGSTOP
@@ -109,7 +109,7 @@ func (s *server) Start() {
 				log.Println("signal triggered.")
 				if store, ok := s.storage.(storage.MemoryStorage); ok {
 					if s.cfg.StoreFile != "" {
-						err := store.StoreMetrics()
+						err = store.StoreMetrics()
 						if err != nil {
 							log.Println(err)
 						}
@@ -126,7 +126,7 @@ func (s *server) Start() {
 	exitCode := <-exitChan
 	cancel()
 
-	err = s.storage.Close()
+	err = s.storage.Close(ctx)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -136,7 +136,6 @@ func (s *server) Start() {
 }
 
 func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash bool) error {
-
 	err := metric.Valid()
 	if err != nil {
 		return fmt.Errorf("Server_saveMetric: %w", err)
@@ -156,7 +155,7 @@ func (s *server) saveMetric(ctx context.Context, metric metrics.Metric, withHash
 		if err != nil {
 			switch {
 			case errors.Is(err, storage.ErrNotFoundMetric):
-				err := s.storage.Save(ctx, metric)
+				err = s.storage.Save(ctx, metric)
 				if err != nil {
 					return fmt.Errorf("Server_saveMetric error:%w", err)
 				}
@@ -236,6 +235,7 @@ func (s *server) getMetricsList(ctx context.Context, withHash bool) ([]metrics.M
 
 	return metricList, nil
 }
+
 func (s *server) storeMetrics(ctx context.Context) {
 	tick := time.NewTicker(s.cfg.StoreInterval)
 	defer tick.Stop()
@@ -280,6 +280,7 @@ func (s *server) InitStorage(ctx context.Context) error {
 
 	return nil
 }
+
 func (s *server) pingStorage(ctx context.Context) error {
 	if err := s.storage.(storage.PgStorage).Ping(ctx); err != nil {
 		return fmt.Errorf("Server_pingStorage error: %w", err)

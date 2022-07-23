@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWithPollInterval(t *testing.T) {
@@ -166,7 +167,7 @@ func Test_newAgentConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := os.Setenv(tt.args.envName, tt.args.envValue)
 			defer func() {
-				err := os.Unsetenv(tt.args.envName)
+				err = os.Unsetenv(tt.args.envName)
 				assert.NoError(t, err)
 			}()
 			assert.NoError(t, err)

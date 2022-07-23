@@ -3,10 +3,11 @@ package agent
 import (
 	"errors"
 	"fmt"
-	"github.com/caarlos0/env/v6"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type (
@@ -38,7 +39,7 @@ func newAgentConfig() (*agentConfig, error) {
 	}
 
 	if err := env.Parse(&cfg); err != nil {
-		return nil, fmt.Errorf("newAgentConfig: %v", err)
+		return nil, fmt.Errorf("newAgentConfig: %w", err)
 	}
 
 	_, port, err := net.SplitHostPort(cfg.ServerAddress)

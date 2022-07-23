@@ -3,10 +3,12 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/sreway/yametrics/internal/metrics"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string) (MemoryStorage, error) {
@@ -16,7 +18,6 @@ func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string)
 	}
 
 	testStorage, err := NewMemoryStorage(storageFile)
-
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func NewTestMemoryStorage(metricID, metricType, metricValue, storageFile string)
 
 func OpenTestFile(path string) (*os.File, error) {
 	flag := os.O_RDWR | os.O_CREATE
-	fileObj, err := os.OpenFile(path, flag, 0644)
+	fileObj, err := os.OpenFile(path, flag, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("NewFileObj: can't open file %s", path)
 	}
@@ -278,19 +279,19 @@ func Test_storage_LoadMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			s, err := NewTestMemoryStorage(tt.fields.storageData.metricID, tt.fields.storageData.metricType,
 				tt.fields.storageData.metricValue, tt.args.filePath)
 			assert.NoError(t, err)
 			err = s.StoreMetrics()
 			assert.NoError(t, err)
-			err = s.Close()
+			err = s.Close(ctx)
 			assert.NoError(t, err)
 			emptyStore, err := NewMemoryStorage(tt.args.filePath)
 			assert.NoError(t, err)
 			tt.wantErr(t, emptyStore.LoadMetrics(), fmt.Sprintf("LoadMetrics(%v)", tt.args.filePath))
 			defer os.Remove(tt.args.filePath)
-			defer emptyStore.Close()
-
+			defer emptyStore.Close(ctx)
 		})
 	}
 }

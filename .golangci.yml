@@ -1,0 +1,85 @@
+run:
+  concurrency: 4
+  deadline: 5m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+  govet:
+    check-shadowing: true
+    fieldalignment: true
+  golint:
+    min-confidence: 0.8
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/sreway/yametrics
+  revive:
+    rules:
+      - name: blank-imports
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: indent-error-flow
+      - name: empty-block
+      - name: superfluous-else
+      - name: unreachable-code
+
+  unused:
+    check-exported: false
+  unparam:
+    check-exported: false
+
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - errorlint
+    - goconst
+    - gocritic
+    - gocyclo
+    - godox
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gosimple
+    - govet
+    - depguard
+    - makezero
+    - misspell
+    - ineffassign
+    - misspell
+    - nakedret
+    - nestif
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace

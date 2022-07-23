@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sreway/yametrics/internal/metrics"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/sreway/yametrics/internal/metrics"
 )
 
 func (s *memoryStorage) UnmarshalJSON(data []byte) error {
 	tmpData := new(metrics.Metrics)
-	if err := json.Unmarshal(data, &tmpData); err != nil {
-		return err
+	err := json.Unmarshal(data, &tmpData)
+	if err != nil {
+		return fmt.Errorf("Storage_UnmarshalJSON")
 	}
 	return nil
 }
@@ -23,7 +25,6 @@ func (s *memoryStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	defer s.mu.Unlock()
 	_ = ctx
 	storageMetrics, err := s.metrics.GetMetrics(metric.MType)
-
 	if err != nil {
 		return fmt.Errorf("Storage_Save:%w", err)
 	}
@@ -38,7 +39,6 @@ func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName st
 	defer s.mu.RUnlock()
 	_ = ctx
 	storageMetrics, err := s.metrics.GetMetrics(metricType)
-
 	if err != nil {
 		return nil, fmt.Errorf("Storage_GetMetric:%w", err)
 	}
@@ -50,7 +50,6 @@ func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName st
 	}
 
 	return &metric, nil
-
 }
 
 func (s *memoryStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
@@ -74,7 +73,7 @@ func (s *memoryStorage) StoreMetrics() error {
 
 	m, err := s.GetMetrics(context.Background())
 	if err != nil {
-		return fmt.Errorf("memoryStorage_GetMetrics: %err", err)
+		return fmt.Errorf("memoryStorage_GetMetrics: %w", err)
 	}
 
 	if err := json.NewEncoder(s.fileObj).Encode(m); err != nil {
@@ -103,12 +102,13 @@ func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, v
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	_ = ctx
-	*s.metrics.Counter[metricID].Delta = *s.metrics.Counter[metricID].Delta + value
+	*s.metrics.Counter[metricID].Delta += value
 
 	return nil
 }
 
-func (s *memoryStorage) Close() error {
+func (s *memoryStorage) Close(ctx context.Context) error {
+	_ = ctx
 	err := s.fileObj.Close()
 	if err != nil {
 		return fmt.Errorf("memoryStorage_Close: %w", err)
@@ -120,7 +120,7 @@ func (s *memoryStorage) Close() error {
 func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
+	_ = ctx
 	counterMetrics, err := s.metrics.GetMetrics("counter")
 	if err != nil {
 		return fmt.Errorf("memoryStorage_BatchMetrics: %w", err)
@@ -133,16 +133,16 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 
 	for _, metric := range m {
 		switch metric.MType {
-		case "counter":
+		case metrics.CounterStrName:
 			if _, exist := counterMetrics[metric.ID]; !exist {
 				counterMetrics[metric.ID] = metric
 			} else {
 				*counterMetrics[metric.ID].Delta += *metric.Delta
 			}
-		case "gauge":
+		case metrics.GaugeStrName:
 			gaugeMetrics[metric.ID] = metric
 		default:
-			return fmt.Errorf("memoryStorage_BatchMetrics: %err",
+			return fmt.Errorf("memoryStorage_BatchMetrics: %w",
 				metrics.NewMetricError(metric.MType, metric.ID, metrics.ErrInvalidMetricType))
 		}
 	}
@@ -154,7 +154,6 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 }
 
 func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
-
 	s := &memoryStorage{
 		metrics.Metrics{
 			Counter: make(map[string]metrics.Metric),
@@ -177,7 +176,7 @@ func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
 
 func OpenStorageFile(path string) (*os.File, error) {
 	flag := os.O_RDWR | os.O_CREATE
-	fileObj, err := os.OpenFile(path, flag, 0644)
+	fileObj, err := os.OpenFile(path, flag, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("NewServer: can't open file %s", path)
 	}
