@@ -282,9 +282,14 @@ func (s *server) InitStorage(ctx context.Context) error {
 }
 
 func (s *server) pingStorage(ctx context.Context) error {
-	if err := s.storage.Ping(ctx); err != nil {
+	pgStorage, ok := s.storage.(storage.PgStorage)
+	if !ok {
+		return fmt.Errorf("Server_pingStorage error: method ping is available only for postgres storage")
+	}
+	if err := pgStorage.Ping(ctx); err != nil {
 		return fmt.Errorf("Server_pingStorage error: %w", err)
 	}
+
 	return nil
 }
 

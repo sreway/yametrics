@@ -153,10 +153,6 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 	return nil
 }
 
-func (s *memoryStorage) Ping(ctx context.Context) error {
-	return nil
-}
-
 func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
 	s := &memoryStorage{
 		metrics.Metrics{

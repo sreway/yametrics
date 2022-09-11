@@ -531,14 +531,14 @@ func Test_server_Ping(t *testing.T) {
 		want want
 	}{
 		{
-			name: "get ping",
+			name: "get ping for memory storage",
 			args: args{
 				uri:    "/ping",
 				method: http.MethodGet,
 			},
 
 			want: want{
-				statusCode: 200,
+				statusCode: 501,
 			},
 		},
 
