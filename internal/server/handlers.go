@@ -223,7 +223,6 @@ func ErrHandel(w http.ResponseWriter, err error) {
 		case errors.Is(metricErr.MetricError, ErrInvalidMetricHash):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
-
 			w.WriteHeader(http.StatusNotImplemented)
 		}
 		return
