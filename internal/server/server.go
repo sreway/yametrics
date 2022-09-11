@@ -282,7 +282,7 @@ func (s *server) InitStorage(ctx context.Context) error {
 }
 
 func (s *server) pingStorage(ctx context.Context) error {
-	if err := s.storage.(storage.PgStorage).Ping(ctx); err != nil {
+	if err := s.storage.Ping(ctx); err != nil {
 		return fmt.Errorf("Server_pingStorage error: %w", err)
 	}
 	return nil
