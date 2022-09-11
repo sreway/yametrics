@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/sreway/yametrics/branch/main/graph/badge.svg?token=ANG3100MP8)](https://codecov.io/gh/sreway/yametrics)
+[![codecov](https://codecov.io/gh/sreway/yametrics/branch/INC-15/graph/badge.svg?token=ANG3100MP8)](https://codecov.io/gh/sreway/yametrics)
 
 # go-musthave-devops-tpl
 
