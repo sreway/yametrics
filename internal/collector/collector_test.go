@@ -97,3 +97,12 @@ func Test_collector_ClearPollCounter(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkCollector_CollectRuntimeMetrics(b *testing.B) {
+	c := &collector{
+		metrics: new(Metrics),
+	}
+	for i := 0; i < b.N; i++ {
+		c.CollectRuntimeMetrics()
+	}
+}

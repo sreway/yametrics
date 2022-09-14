@@ -63,24 +63,38 @@ func (g Gauge) ToFloat64() float64 {
 }
 
 func (m *Metrics) CollectRuntimeMetrics() {
-	memStats := new(runtime.MemStats)
-	runtime.ReadMemStats(memStats)
+	rtm := new(runtime.MemStats)
+	runtime.ReadMemStats(rtm)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	memStatsElements := reflect.ValueOf(memStats).Elem()
-	metricsElements := reflect.ValueOf(m).Elem()
-
-	for i := 0; i < memStatsElements.NumField(); i++ {
-		for j := 0; j < metricsElements.NumField(); j++ {
-			if memStatsElements.Type().Field(i).Name == metricsElements.Type().Field(j).Name {
-				statValue := memStatsElements.Field(i).Interface()
-				statValueConverted := reflect.ValueOf(statValue).Convert(metricsElements.Field(j).Type())
-				metricsElements.Field(j).Set(statValueConverted)
-			}
-		}
-	}
-
+	m.Alloc = Gauge(rtm.Alloc)
+	m.BuckHashSys = Gauge(rtm.BuckHashSys)
+	m.Frees = Gauge(rtm.Frees)
+	m.GCCPUFraction = Gauge(rtm.GCCPUFraction)
+	m.GCSys = Gauge(rtm.GCSys)
+	m.HeapAlloc = Gauge(rtm.HeapAlloc)
+	m.HeapIdle = Gauge(rtm.HeapIdle)
+	m.HeapInuse = Gauge(rtm.HeapInuse)
+	m.HeapObjects = Gauge(rtm.HeapObjects)
+	m.HeapReleased = Gauge(rtm.HeapReleased)
+	m.HeapSys = Gauge(rtm.HeapSys)
+	m.LastGC = Gauge(rtm.LastGC)
+	m.Lookups = Gauge(rtm.Lookups)
+	m.MCacheInuse = Gauge(rtm.MCacheInuse)
+	m.MCacheSys = Gauge(rtm.MCacheSys)
+	m.MSpanInuse = Gauge(rtm.MSpanInuse)
+	m.MSpanSys = Gauge(rtm.MSpanSys)
+	m.Mallocs = Gauge(rtm.Mallocs)
+	m.NextGC = Gauge(rtm.NextGC)
+	m.NumForcedGC = Gauge(rtm.NumForcedGC)
+	m.NumGC = Gauge(rtm.NumGC)
+	m.OtherSys = Gauge(rtm.OtherSys)
+	m.PauseTotalNs = Gauge(rtm.PauseTotalNs)
+	m.StackInuse = Gauge(rtm.StackInuse)
+	m.StackSys = Gauge(rtm.StackSys)
+	m.Sys = Gauge(rtm.Sys)
+	m.TotalAlloc = Gauge(rtm.TotalAlloc)
 	m.PollCount++
 	m.RandomValue = Gauge(rand.Float64())
 }
