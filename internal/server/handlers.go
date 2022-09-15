@@ -24,6 +24,7 @@ var (
 	}
 )
 
+// UpdateMetric godoc
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	metricType := chi.URLParam(r, "metricType")
@@ -48,6 +49,7 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Index godoc
 func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
@@ -78,6 +80,7 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// MetricValue godoc
 func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	metricName := chi.URLParam(r, "metricName")
@@ -97,6 +100,7 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateMetricJSON godoc
 func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
@@ -130,6 +134,7 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// MetricValueJSON godoc
 func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
@@ -156,6 +161,7 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Ping godoc
 func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 	defer cancel()
@@ -170,6 +176,7 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// BatchMetrics godoc
 func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	var m []metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
@@ -207,6 +214,7 @@ func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ErrHandel implements error wrapping in the handlers
 func ErrHandel(w http.ResponseWriter, err error) {
 	var metricErr *metrics.ErrMetric
 

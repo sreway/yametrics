@@ -1,3 +1,4 @@
+// Package agent implements and describes an agent for collecting and sending them to the server
 package agent
 
 import (
@@ -19,6 +20,7 @@ import (
 	"github.com/sreway/yametrics/internal/metrics"
 )
 
+// Agent describes the implementation of collector
 type Agent interface {
 	Start()
 	CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup)
@@ -31,6 +33,7 @@ type agent struct {
 	Config     *agentConfig
 }
 
+// CollectRuntimeMetrics implements collects runtime metrics
 func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.PollInterval)
@@ -47,6 +50,7 @@ func (a *agent) CollectRuntimeMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
+// CollectUtilMetrics implements collects memory and cpu metrics
 func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cpuUsage := make(chan collector.Gauge)
@@ -65,6 +69,7 @@ func (a *agent) CollectUtilMetrics(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
+// Send implements periodic sending of metrics to the server
 func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	tick := time.NewTicker(a.Config.ReportInterval)
@@ -88,6 +93,7 @@ func (a *agent) Send(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
+// Start implements starting/stopping the agent and running periodic tasks
 func (a *agent) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -120,6 +126,7 @@ func (a *agent) Start() {
 	os.Exit(exitCode)
 }
 
+// NewAgent implements agent initialization
 func NewAgent(opts ...OptionAgent) (Agent, error) {
 	agentCfg, err := newAgentConfig()
 	if err != nil {
@@ -139,6 +146,7 @@ func NewAgent(opts ...OptionAgent) (Agent, error) {
 	}, nil
 }
 
+// SendToSever implements sending metrics to the server
 func (a *agent) SendToSever(m []metrics.Metric, withHash bool) error {
 	var body bytes.Buffer
 
@@ -180,6 +188,7 @@ func getCPUInfo() collector.Gauge {
 	return collector.Gauge(percent[0])
 }
 
+// CollectCPUInfo implements the collection of CPU info and sending them to the data channel
 func CollectCPUInfo(ctx context.Context, wg *sync.WaitGroup, dataCh chan collector.Gauge, stopCh chan struct{}) {
 	defer wg.Done()
 

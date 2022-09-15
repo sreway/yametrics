@@ -1,3 +1,4 @@
+// Package server implements and describes a server for collecting and storing metrics
 package server
 
 import (
@@ -24,6 +25,7 @@ var (
 )
 
 type (
+	// Server describes the implementation of server
 	Server interface {
 		Start()
 	}
@@ -35,6 +37,7 @@ type (
 	}
 )
 
+// NewServer implements server initialization
 func NewServer(opts ...OptionServer) (Server, error) {
 	srvCfg, err := newServerConfig()
 	if err != nil {
@@ -56,6 +59,7 @@ func NewServer(opts ...OptionServer) (Server, error) {
 	}, nil
 }
 
+// Start implements starting/stopping the server and performing periodic tasks for storing metrics
 func (s *server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	systemSignals := make(chan os.Signal, 1)

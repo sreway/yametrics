@@ -14,9 +14,11 @@ import (
 )
 
 type (
-	Gauge   float64
+	// Gauge defines the type of gauge metric based on float64
+	Gauge float64
+	// Counter defines the type of counter metric based on int64
 	Counter int64
-
+	// Metrics defines a structure for storing metrics
 	Metrics struct {
 		Alloc           Gauge
 		BuckHashSys     Gauge
@@ -54,14 +56,17 @@ type (
 	}
 )
 
+// ToInt64 converts the counter type to int64
 func (c Counter) ToInt64() int64 {
 	return int64(c)
 }
 
+// ToFloat64 converts the gauge type to float64
 func (g Gauge) ToFloat64() float64 {
 	return float64(g)
 }
 
+// CollectRuntimeMetrics implements collects runtime metrics
 func (m *Metrics) CollectRuntimeMetrics() {
 	rtm := new(runtime.MemStats)
 	runtime.ReadMemStats(rtm)
@@ -99,6 +104,7 @@ func (m *Metrics) CollectRuntimeMetrics() {
 	m.RandomValue = Gauge(rand.Float64())
 }
 
+// CollectMemmoryMetrics implements collects memmory metrics
 func (m *Metrics) CollectMemmoryMetrics() {
 	memStats, _ := mem.VirtualMemory()
 	m.mu.Lock()
@@ -107,12 +113,14 @@ func (m *Metrics) CollectMemmoryMetrics() {
 	m.FreeMemory = Gauge(memStats.Free)
 }
 
+// SetCPUutilization implements store cpu utilization
 func (m *Metrics) SetCPUutilization(cpuUtilization Gauge) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.CPUutilization1 = cpuUtilization
 }
 
+// ExposeMetrics implements expose metrics to the list from struct
 func (m *Metrics) ExposeMetrics() []metrics.Metric {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -143,12 +151,14 @@ func (m *Metrics) ExposeMetrics() []metrics.Metric {
 	return exposeMetrics
 }
 
+// ClearPollCounter implements clear poll counter
 func (m *Metrics) ClearPollCounter() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.PollCount = 0
 }
 
+// ParseCounter implements counter value from string
 func ParseCounter(s string) (Counter, error) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
@@ -158,6 +168,7 @@ func ParseCounter(s string) (Counter, error) {
 	return Counter(n), nil
 }
 
+// ParseGause implements gauge value from string
 func ParseGause(s string) (Gauge, error) {
 	n, err := strconv.ParseFloat(s, 64)
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package metrics implements and describes a common type of metric for agent and server
 package metrics
 
 import (
@@ -19,6 +20,7 @@ const (
 )
 
 type (
+	// Metric defines the type of metric to send to the server
 	Metric struct {
 		ID    string   `json:"id" db:"name"`
 		MType string   `json:"type" db:"type"`
@@ -26,22 +28,24 @@ type (
 		Value *float64 `json:"value,omitempty" db:"value"`
 		Hash  string   `json:"hash,omitempty"`
 	}
-
+	// Metrics defines the type for counter and gauge metrics
 	Metrics struct {
 		Counter map[string]Metric `json:"counter"`
 		Gauge   map[string]Metric `json:"gauge"`
 	}
-
+	// ErrMetric defines metric error
 	ErrMetric struct {
 		MetricError error
 		MetricType  string
 		MetricID    string
 	}
+	// MetricValue defines metric value
 	MetricValue interface {
 		float64 | int64
 	}
 )
 
+// NewMetric implements creating a metric
 func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 	var metric Metric
 
@@ -74,10 +78,12 @@ func NewMetric(metricID, metricType, metricValue string) (Metric, error) {
 	}
 }
 
+// IsCounter implements the check that the metric is a counter
 func (m Metric) IsCounter() bool {
 	return m.MType == "counter"
 }
 
+// GetStrValue implements getting the string value of the metric
 func (m Metric) GetStrValue() string {
 	switch m.MType {
 	case CounterStrName:
@@ -89,6 +95,7 @@ func (m Metric) GetStrValue() string {
 	}
 }
 
+// Float64Value implements getting the float64 value of the metric
 func (m *Metric) Float64Value() float64 {
 	if m.Value == nil {
 		return 0
@@ -96,10 +103,12 @@ func (m *Metric) Float64Value() float64 {
 	return *m.Value
 }
 
+// Float64Pointer implements getting the float64 pointer of the metric
 func (m *Metric) Float64Pointer() *float64 {
 	return m.Value
 }
 
+// Int64Value implements getting the int64 value of the metric
 func (m *Metric) Int64Value() int64 {
 	if m.Delta == nil {
 		return 0
@@ -107,18 +116,22 @@ func (m *Metric) Int64Value() int64 {
 	return *m.Delta
 }
 
+// Int64Pointer implements getting the int64 pointer of the metric
 func (m *Metric) Int64Pointer() *int64 {
 	return m.Delta
 }
 
+// SetFloat64 implements set float64 value of the metric
 func (m *Metric) SetFloat64(f float64) {
 	m.Value = &f
 }
 
+// SetInt64 implements set int64 value of the metric
 func (m *Metric) SetInt64(i int64) {
 	m.Delta = &i
 }
 
+// Valid implements validation metric
 func (m *Metric) Valid() error {
 	switch m.MType {
 	case CounterStrName:
@@ -138,6 +151,7 @@ func (m *Metric) Valid() error {
 	return nil
 }
 
+// GetMetrics implements getting metrics depending on the type
 func (m *Metrics) GetMetrics(metricsType string) (map[string]Metric, error) {
 	switch metricsType {
 	case CounterStrName:
@@ -169,6 +183,7 @@ func calcHash[T MetricValue](key, metricID, metricType string, metricValue T) st
 	return fmt.Sprintf("%x", hash)
 }
 
+// CalcHash implements the calculation of the metric hash
 func (m *Metric) CalcHash(key string) string {
 	if m.IsCounter() {
 		return calcHash[int64](key, m.ID, m.MType, *m.Delta)
@@ -177,10 +192,12 @@ func (m *Metric) CalcHash(key string) string {
 	return calcHash[float64](key, m.ID, m.MType, *m.Value)
 }
 
+// ErrMetric implements metric error stringer
 func (e *ErrMetric) Error() string {
 	return fmt.Sprintf("[%s][%s] error %s", e.MetricType, e.MetricID, e.MetricError)
 }
 
+// NewMetricError implements the creation of a metric error
 func NewMetricError(metricType, metricID string, err error) error {
 	return &ErrMetric{
 		MetricType:  metricType,
