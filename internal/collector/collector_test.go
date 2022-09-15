@@ -69,3 +69,40 @@ func Test_collector_CollectMetrics(t *testing.T) {
 		})
 	}
 }
+
+func Test_collector_ClearPollCounter(t *testing.T) {
+	type fields struct {
+		metrics *Metrics
+	}
+	tests := []struct {
+		name   string
+		fields fields
+	}{
+		{
+			name: "clear poll counter",
+			fields: fields{
+				metrics: &Metrics{
+					PollCount: 10,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &collector{
+				metrics: tt.fields.metrics,
+			}
+			c.ClearPollCounter()
+			assert.Zero(t, c.metrics.PollCount)
+		})
+	}
+}
+
+func BenchmarkCollector_CollectRuntimeMetrics(b *testing.B) {
+	c := &collector{
+		metrics: new(Metrics),
+	}
+	for i := 0; i < b.N; i++ {
+		c.CollectRuntimeMetrics()
+	}
+}

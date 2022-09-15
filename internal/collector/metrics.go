@@ -14,9 +14,11 @@ import (
 )
 
 type (
-	Gauge   float64
+	// Gauge defines the type of gauge metric based on float64
+	Gauge float64
+	// Counter defines the type of counter metric based on int64
 	Counter int64
-
+	// Metrics defines a structure for storing metrics
 	Metrics struct {
 		Alloc           Gauge
 		BuckHashSys     Gauge
@@ -54,37 +56,55 @@ type (
 	}
 )
 
+// ToInt64 converts the counter type to int64
 func (c Counter) ToInt64() int64 {
 	return int64(c)
 }
 
+// ToFloat64 converts the gauge type to float64
 func (g Gauge) ToFloat64() float64 {
 	return float64(g)
 }
 
+// CollectRuntimeMetrics implements collects runtime metrics
 func (m *Metrics) CollectRuntimeMetrics() {
-	memStats := new(runtime.MemStats)
-	runtime.ReadMemStats(memStats)
+	rtm := new(runtime.MemStats)
+	runtime.ReadMemStats(rtm)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	memStatsElements := reflect.ValueOf(memStats).Elem()
-	metricsElements := reflect.ValueOf(m).Elem()
-
-	for i := 0; i < memStatsElements.NumField(); i++ {
-		for j := 0; j < metricsElements.NumField(); j++ {
-			if memStatsElements.Type().Field(i).Name == metricsElements.Type().Field(j).Name {
-				statValue := memStatsElements.Field(i).Interface()
-				statValueConverted := reflect.ValueOf(statValue).Convert(metricsElements.Field(j).Type())
-				metricsElements.Field(j).Set(statValueConverted)
-			}
-		}
-	}
-
+	m.Alloc = Gauge(rtm.Alloc)
+	m.BuckHashSys = Gauge(rtm.BuckHashSys)
+	m.Frees = Gauge(rtm.Frees)
+	m.GCCPUFraction = Gauge(rtm.GCCPUFraction)
+	m.GCSys = Gauge(rtm.GCSys)
+	m.HeapAlloc = Gauge(rtm.HeapAlloc)
+	m.HeapIdle = Gauge(rtm.HeapIdle)
+	m.HeapInuse = Gauge(rtm.HeapInuse)
+	m.HeapObjects = Gauge(rtm.HeapObjects)
+	m.HeapReleased = Gauge(rtm.HeapReleased)
+	m.HeapSys = Gauge(rtm.HeapSys)
+	m.LastGC = Gauge(rtm.LastGC)
+	m.Lookups = Gauge(rtm.Lookups)
+	m.MCacheInuse = Gauge(rtm.MCacheInuse)
+	m.MCacheSys = Gauge(rtm.MCacheSys)
+	m.MSpanInuse = Gauge(rtm.MSpanInuse)
+	m.MSpanSys = Gauge(rtm.MSpanSys)
+	m.Mallocs = Gauge(rtm.Mallocs)
+	m.NextGC = Gauge(rtm.NextGC)
+	m.NumForcedGC = Gauge(rtm.NumForcedGC)
+	m.NumGC = Gauge(rtm.NumGC)
+	m.OtherSys = Gauge(rtm.OtherSys)
+	m.PauseTotalNs = Gauge(rtm.PauseTotalNs)
+	m.StackInuse = Gauge(rtm.StackInuse)
+	m.StackSys = Gauge(rtm.StackSys)
+	m.Sys = Gauge(rtm.Sys)
+	m.TotalAlloc = Gauge(rtm.TotalAlloc)
 	m.PollCount++
 	m.RandomValue = Gauge(rand.Float64())
 }
 
+// CollectMemmoryMetrics implements collects memmory metrics
 func (m *Metrics) CollectMemmoryMetrics() {
 	memStats, _ := mem.VirtualMemory()
 	m.mu.Lock()
@@ -93,12 +113,14 @@ func (m *Metrics) CollectMemmoryMetrics() {
 	m.FreeMemory = Gauge(memStats.Free)
 }
 
+// SetCPUutilization implements store cpu utilization
 func (m *Metrics) SetCPUutilization(cpuUtilization Gauge) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.CPUutilization1 = cpuUtilization
 }
 
+// ExposeMetrics implements expose metrics to the list from struct
 func (m *Metrics) ExposeMetrics() []metrics.Metric {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -129,12 +151,14 @@ func (m *Metrics) ExposeMetrics() []metrics.Metric {
 	return exposeMetrics
 }
 
+// ClearPollCounter implements clear poll counter
 func (m *Metrics) ClearPollCounter() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.PollCount = 0
 }
 
+// ParseCounter implements counter value from string
 func ParseCounter(s string) (Counter, error) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
@@ -144,6 +168,7 @@ func ParseCounter(s string) (Counter, error) {
 	return Counter(n), nil
 }
 
+// ParseGause implements gauge value from string
 func ParseGause(s string) (Gauge, error) {
 	n, err := strconv.ParseFloat(s, 64)
 	if err != nil {

@@ -71,6 +71,7 @@ func newServerConfig() (*serverConfig, error) {
 	return &cfg, nil
 }
 
+// WithAddr implements an option that sets the server address
 func WithAddr(address string) OptionServer {
 	return func(cfg *serverConfig) error {
 		_, port, err := net.SplitHostPort(address)

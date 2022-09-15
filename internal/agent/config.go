@@ -56,6 +56,7 @@ func newAgentConfig() (*agentConfig, error) {
 	return &cfg, nil
 }
 
+// WithPollInterval implements an option that sets the polling interval
 func WithPollInterval(poolInterval string) OptionAgent {
 	return func(cfg *agentConfig) error {
 		poolIntervalDuration, err := time.ParseDuration(poolInterval)
@@ -68,6 +69,7 @@ func WithPollInterval(poolInterval string) OptionAgent {
 	}
 }
 
+// WithReportInterval implements an option that sets the polling interval
 func WithReportInterval(reportInterval string) OptionAgent {
 	return func(cfg *agentConfig) error {
 		reportIntervalDuration, err := time.ParseDuration(reportInterval)

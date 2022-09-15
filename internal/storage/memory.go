@@ -11,15 +11,17 @@ import (
 	"github.com/sreway/yametrics/internal/metrics"
 )
 
+// UnmarshalJSON implements unmarshalling metrics from memory storage in JSON format (in-memory storage)
 func (s *memoryStorage) UnmarshalJSON(data []byte) error {
 	tmpData := new(metrics.Metrics)
 	err := json.Unmarshal(data, &tmpData)
 	if err != nil {
-		return fmt.Errorf("Storage_UnmarshalJSON")
+		return fmt.Errorf("Storage_UnmarshalJSON %w", err)
 	}
 	return nil
 }
 
+// Save implements saving metric (in-memory storage)
 func (s *memoryStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -34,6 +36,7 @@ func (s *memoryStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	return nil
 }
 
+// GetMetric implements getting metric (in-memory storage)
 func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName string) (*metrics.Metric, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -52,11 +55,13 @@ func (s *memoryStorage) GetMetric(ctx context.Context, metricType, metricName st
 	return &metric, nil
 }
 
+// GetMetrics implements getting metrics (in-memory storage)
 func (s *memoryStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	_ = ctx
 	return &s.metrics, nil
 }
 
+// StoreMetrics implements saving metrics in a file (in-memory storage)
 func (s *memoryStorage) StoreMetrics() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -85,6 +90,7 @@ func (s *memoryStorage) StoreMetrics() error {
 	return nil
 }
 
+// LoadMetrics implements loading metrics from a file (in-memory storage)
 func (s *memoryStorage) LoadMetrics() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,6 +104,7 @@ func (s *memoryStorage) LoadMetrics() error {
 	return nil
 }
 
+// IncrementCounter implements increment counter (in-memory storage)
 func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, value int64) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -107,6 +114,7 @@ func (s *memoryStorage) IncrementCounter(ctx context.Context, metricID string, v
 	return nil
 }
 
+// Close implements closing the connection to the file storage (in-memory storage)
 func (s *memoryStorage) Close(ctx context.Context) error {
 	_ = ctx
 	err := s.fileObj.Close()
@@ -117,6 +125,7 @@ func (s *memoryStorage) Close(ctx context.Context) error {
 	return nil
 }
 
+// BatchMetrics implements saving multiple metrics (in-memory storage)
 func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -153,6 +162,7 @@ func (s *memoryStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) er
 	return nil
 }
 
+// NewMemoryStorage implements the creation of in-memory storage
 func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
 	s := &memoryStorage{
 		metrics.Metrics{
@@ -174,6 +184,7 @@ func NewMemoryStorage(storageFile string) (MemoryStorage, error) {
 	return s, nil
 }
 
+// OpenStorageFile implements opening a file-based storage connection (in-memory storage)
 func OpenStorageFile(path string) (*os.File, error) {
 	flag := os.O_RDWR | os.O_CREATE
 	fileObj, err := os.OpenFile(path, flag, 0o644)

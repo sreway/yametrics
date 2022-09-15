@@ -260,6 +260,7 @@ func Test_server_MetricValue(t *testing.T) {
 	assert.NoError(t, err)
 	store, err := storage.NewMemoryStorage(cfg.StoreFile)
 	assert.NoError(t, err)
+
 	s := &server{
 		nil,
 		store,
@@ -292,40 +293,23 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 		statusCode int
 	}
 
-	type storageData struct {
-		metricID    string
-		metricType  string
-		metricValue string
-	}
-
 	type args struct {
 		uri    string
 		method string
-	}
-
-	type fields struct {
-		storageData storageData
+		body   string
 	}
 
 	tests := []struct {
-		name   string
-		args   args
-		fields fields
-		want   want
+		name string
+		args args
+		want want
 	}{
 		{
-			name: "get counter",
+			name: "update counter",
 			args: args{
-				uri:    "/value/counter/PollCount",
-				method: http.MethodGet,
-			},
-
-			fields: fields{
-				storageData: storageData{
-					metricID:    "PollCount",
-					metricType:  "counter",
-					metricValue: "100",
-				},
+				uri:    "/update/",
+				method: http.MethodPost,
+				body:   `{"id":"testCounter","type":"counter","delta":1}`,
 			},
 
 			want: want{
@@ -333,18 +317,11 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 			},
 		},
 		{
-			name: "get gauge",
+			name: "update gauge",
 			args: args{
-				uri:    "/value/gauge/testGauge",
-				method: http.MethodGet,
-			},
-
-			fields: fields{
-				storageData: storageData{
-					metricID:    "testGauge",
-					metricType:  "gauge",
-					metricValue: "100.1",
-				},
+				uri:    "/update/",
+				method: http.MethodPost,
+				body:   `{"id":"testGauge","type":"gauge","value":20}`,
 			},
 
 			want: want{
@@ -353,57 +330,36 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 		},
 
 		{
-			name: "non existent counter",
+			name: "incorrect metric data",
 			args: args{
-				uri:    "/value/counter/testCounter",
-				method: http.MethodGet,
+				uri:    "/update/",
+				method: http.MethodPost,
+				body:   ``,
 			},
 
 			want: want{
-				statusCode: 404,
+				statusCode: 400,
 			},
 		},
 
 		{
-			name: "non existent counter",
+			name: "incorrect method",
 			args: args{
-				uri:    "/value/gauge/testCounter",
+				uri:    "/update/",
 				method: http.MethodGet,
+				body:   `{"id":"testGauge","type":"gauge","value":20}`,
 			},
 
 			want: want{
-				statusCode: 404,
-			},
-		},
-
-		{
-			name: "invalid type",
-			args: args{
-				uri:    "/value/unknown/testCounter",
-				method: http.MethodGet,
-			},
-
-			want: want{
-				statusCode: 501,
-			},
-		},
-
-		{
-			name: "invalid uri",
-			args: args{
-				uri:    "/value/unknown",
-				method: http.MethodGet,
-			},
-
-			want: want{
-				statusCode: 404,
+				statusCode: 405,
 			},
 		},
 	}
 	cfg, err := newServerConfig()
 	assert.NoError(t, err)
-	store, err := storage.NewMemoryStorage(cfg.StoreFile)
+	store, err := storage.NewMemoryStorage("")
 	assert.NoError(t, err)
+
 	s := &server{
 		nil,
 		store,
@@ -412,20 +368,13 @@ func Test_server_UpdateMetricJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.fields.storageData != (storageData{}) {
-				testStorage, err := NewTestMemoryStorage(tt.fields.storageData.metricID,
-					tt.fields.storageData.metricType, tt.fields.storageData.metricValue)
-				assert.NoError(t, err)
-				s.storage = testStorage
-			}
-
 			r := chi.NewRouter()
 			s.initRoutes(r)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
-			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-			err := resp.Body.Close()
+			err = resp.Body.Close()
 			require.NoError(t, err)
 		})
 	}
@@ -480,7 +429,7 @@ func Test_server_MetricValueJSON(t *testing.T) {
 		},
 
 		{
-			name: "update gauge",
+			name: "gauge value",
 			args: args{
 				uri:    "/value/",
 				method: http.MethodPost,
@@ -559,6 +508,212 @@ func Test_server_MetricValueJSON(t *testing.T) {
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 			resp := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			err = resp.Body.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func Test_server_Ping(t *testing.T) {
+	type want struct {
+		statusCode int
+	}
+
+	type args struct {
+		uri    string
+		method string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "get ping for memory storage",
+			args: args{
+				uri:    "/ping",
+				method: http.MethodGet,
+			},
+
+			want: want{
+				statusCode: 501,
+			},
+		},
+
+		{
+			name: "incorrect method",
+			args: args{
+				uri:    "/ping",
+				method: http.MethodPost,
+			},
+
+			want: want{
+				statusCode: 405,
+			},
+		},
+	}
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage("")
+	assert.NoError(t, err)
+
+	s := &server{
+		nil,
+		store,
+		cfg,
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := chi.NewRouter()
+			s.initRoutes(r)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			err = resp.Body.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func Test_server_BatchMetrics(t *testing.T) {
+	type want struct {
+		statusCode int
+	}
+
+	type args struct {
+		uri    string
+		method string
+		body   string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "send batch metrics",
+			args: args{
+				uri:    "/updates/",
+				method: http.MethodPost,
+				body:   `[{"id":"tGauge","type":"gauge","value":20},{"id":"tCounter","type":"counter","delta":1}]`,
+			},
+
+			want: want{
+				statusCode: 200,
+			},
+		},
+
+		{
+			name: "send incorrect batch metrics",
+			args: args{
+				uri:    "/updates/",
+				method: http.MethodPost,
+				body:   ``,
+			},
+
+			want: want{
+				statusCode: 400,
+			},
+		},
+
+		{
+			name: "incorrect method",
+			args: args{
+				uri:    "/updates/",
+				method: http.MethodGet,
+			},
+
+			want: want{
+				statusCode: 405,
+			},
+		},
+	}
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage("")
+	assert.NoError(t, err)
+
+	s := &server{
+		nil,
+		store,
+		cfg,
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := chi.NewRouter()
+			s.initRoutes(r)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, tt.args.body)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			err = resp.Body.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func Test_server_Index(t *testing.T) {
+	type want struct {
+		statusCode int
+	}
+
+	type args struct {
+		uri    string
+		method string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "get index",
+			args: args{
+				uri:    "/",
+				method: http.MethodGet,
+			},
+			want: want{
+				statusCode: 200,
+			},
+		},
+
+		{
+			name: "incorrect method",
+			args: args{
+				uri:    "/",
+				method: http.MethodPost,
+			},
+
+			want: want{
+				statusCode: 405,
+			},
+		},
+	}
+	cfg, err := newServerConfig()
+	assert.NoError(t, err)
+	store, err := storage.NewMemoryStorage("")
+	assert.NoError(t, err)
+
+	s := &server{
+		nil,
+		store,
+		cfg,
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := chi.NewRouter()
+			s.initRoutes(r)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			resp := testRequest(t, ts, tt.args.method, tt.args.uri, ``)
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			err = resp.Body.Close()
 			require.NoError(t, err)

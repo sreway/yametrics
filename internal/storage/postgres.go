@@ -13,6 +13,7 @@ import (
 	"github.com/sreway/yametrics/internal/metrics"
 )
 
+// NewPgStorage implements the creation of storage for interaction with Postgresql database
 func NewPgStorage(ctx context.Context, dsn string) (PgStorage, error) {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
@@ -26,6 +27,7 @@ func NewPgStorage(ctx context.Context, dsn string) (PgStorage, error) {
 	}, nil
 }
 
+// Save implements saving metric (PostgreSQL)
 func (s *pgStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	_, err := s.connection.Exec(ctx, "INSERT INTO metrics (name, type, delta, value) VALUES ($1, $2, $3, $4)"+
 		"ON CONFLICT ON CONSTRAINT uniq_name_type DO UPDATE set delta=$3, value=$4",
@@ -37,6 +39,7 @@ func (s *pgStorage) Save(ctx context.Context, metric metrics.Metric) error {
 	return nil
 }
 
+// GetMetric implements getting metric (PostgreSQL)
 func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) (*metrics.Metric, error) {
 	var m metrics.Metric
 
@@ -62,6 +65,7 @@ func (s *pgStorage) GetMetric(ctx context.Context, metricType, metricID string) 
 	return &m, nil
 }
 
+// GetMetrics implements getting metrics (PostgreSQL)
 func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	m := metrics.Metrics{
 		Counter: make(map[string]metrics.Metric),
@@ -101,6 +105,7 @@ func (s *pgStorage) GetMetrics(ctx context.Context) (*metrics.Metrics, error) {
 	return &m, nil
 }
 
+// IncrementCounter implements increment counter (PostgreSQL)
 func (s *pgStorage) IncrementCounter(ctx context.Context, metricID string, value int64) error {
 	_, err := s.connection.Exec(ctx, "INSERT INTO metrics (name, type, delta) VALUES ($1, $2, $3)"+
 		"ON CONFLICT ON CONSTRAINT uniq_name_type DO UPDATE set delta = $3 + metrics.delta", metricID, "counter", value)
@@ -111,6 +116,7 @@ func (s *pgStorage) IncrementCounter(ctx context.Context, metricID string, value
 	return nil
 }
 
+// Ping implements health check storage (PostgreSQL)
 func (s *pgStorage) Ping(ctx context.Context) error {
 	if err := s.connection.Ping(ctx); err != nil {
 		return fmt.Errorf("pgStorage_Ping: %w", ErrStorageUnavailable)
@@ -118,6 +124,7 @@ func (s *pgStorage) Ping(ctx context.Context) error {
 	return nil
 }
 
+// Close implements closing the connection to the storage (PostgreSQL)
 func (s *pgStorage) Close(ctx context.Context) error {
 	if err := s.connection.Close(ctx); err != nil {
 		return fmt.Errorf("pgStorage_Close: %w", err)
@@ -125,6 +132,7 @@ func (s *pgStorage) Close(ctx context.Context) error {
 	return nil
 }
 
+// ValidateSchema implements migrations for storage (PostgreSQL)
 func (s *pgStorage) ValidateSchema(sourceMigrationsURL string) error {
 	config := s.connection.Config()
 	migrateURL := fmt.Sprintf("pgx://%s:%s@%s:%d/%s",
@@ -147,6 +155,7 @@ func (s *pgStorage) ValidateSchema(sourceMigrationsURL string) error {
 	return nil
 }
 
+// BatchMetrics implements saving multiple metrics (PostgreSQL)
 func (s *pgStorage) BatchMetrics(ctx context.Context, m []metrics.Metric) error {
 	tx, err := s.connection.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {

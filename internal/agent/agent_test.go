@@ -1,8 +1,11 @@
 package agent
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 
@@ -80,6 +83,57 @@ func Test_agent_SendToSever(t *testing.T) {
 
 			err := a.SendToSever(tt.args, false)
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestNewAgent(t *testing.T) {
+	type args struct {
+		opts []OptionAgent
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "with correct poll interval",
+			args: args{
+				opts: []OptionAgent{WithPollInterval("10s")},
+			},
+			wantErr: assert.NoError,
+		},
+
+		{
+			name: "with correct report interval",
+			args: args{
+				opts: []OptionAgent{WithReportInterval("10s")},
+			},
+			wantErr: assert.NoError,
+		},
+
+		{
+			name: "with incorrect poll interval",
+			args: args{
+				opts: []OptionAgent{WithPollInterval("10")},
+			},
+			wantErr: assert.Error,
+		},
+
+		{
+			name: "with incorrect report interval",
+			args: args{
+				opts: []OptionAgent{WithReportInterval("10")},
+			},
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewAgent(tt.args.opts...)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewAgent(%v)", tt.args.opts)) {
+				return
+			}
 		})
 	}
 }

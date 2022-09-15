@@ -1,3 +1,4 @@
+// Package storage implements and describes a repository for collecting and storing metrics
 package storage
 
 import (
@@ -31,7 +32,7 @@ type (
 	pgStorage struct {
 		connection *pgx.Conn
 	}
-
+	// Storage describes the implementation of storage (repository)
 	Storage interface {
 		Save(ctx context.Context, metric metrics.Metric) error
 		GetMetric(ctx context.Context, metricType, metricID string) (*metrics.Metric, error)
@@ -40,13 +41,13 @@ type (
 		BatchMetrics(ctx context.Context, m []metrics.Metric) error
 		Close(ctx context.Context) error
 	}
-
+	// MemoryStorage describes the implementation of in-memory storage
 	MemoryStorage interface {
 		Storage
 		LoadMetrics() error
 		StoreMetrics() error
 	}
-
+	// PgStorage describes the implementation of PostgreSQL storage
 	PgStorage interface {
 		Storage
 		Ping(ctx context.Context) error
