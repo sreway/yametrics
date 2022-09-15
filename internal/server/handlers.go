@@ -1,3 +1,5 @@
+// @title server API
+// @description Service for collecting and storing metrics
 package server
 
 import (
@@ -25,6 +27,18 @@ var (
 )
 
 // UpdateMetric godoc
+// @Summary add/update metric
+// @Description add or update metric
+// @ID serverSetUpdateMetric
+// @Produce json
+// @Param metricType path string true "Metric type"
+// @Param metricName path string true "Metric name"
+// @Param metricValue path string true "Metric value"
+// @Success 200
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router /update/{metricType}/{metricName}/{metricValue} [post]
 func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	metricType := chi.URLParam(r, "metricType")
@@ -50,6 +64,15 @@ func (s *server) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 }
 
 // Index godoc
+// @Summary Show metrics
+// @Description show saved metrics
+// @ID serverIndex
+// @Produce text/html
+// @Success 200
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router / [get]
 func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 
@@ -81,6 +104,17 @@ func (s *server) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 // MetricValue godoc
+// @Summary get metric value
+// @Description get metric value
+// @ID serverGetMetricValue
+// @Produce text/html
+// @Param metricName path string true "Metric name"
+// @Param metricType path string true "Metric type"
+// @Success 200
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router /value/{metricType}/{metricName} [get]
 func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	metricName := chi.URLParam(r, "metricName")
@@ -101,6 +135,17 @@ func (s *server) MetricValue(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateMetricJSON godoc
+// @Summary update metric json
+// @Description set update metric
+// @ID serverSetUpdateMetricJSON
+// @Accept  json
+// @Produce json
+// @Param m body metrics.Metric true "metric data"
+// @Success 200 {object} metrics.Metric
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router /update/ [post]
 func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
@@ -135,6 +180,17 @@ func (s *server) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 // MetricValueJSON godoc
+// @Summary metric value json
+// @Description update metric value
+// @ID serverMetricValueJSON
+// @Accept  json
+// @Produce json
+// @Param m body metrics.Metric true "metric data"
+// @Success 200 {object} metrics.Metric
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router /value/ [post]
 func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 	var m metrics.Metric
 	w.Header().Set("Content-Type", "application/json")
@@ -162,6 +218,12 @@ func (s *server) MetricValueJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 // Ping godoc
+// @Summary ping
+// @Description health check metric storage
+// @ID serverPing
+// @Success 200
+// @Failure 500
+// @Router /ping [get]
 func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 	defer cancel()
@@ -177,6 +239,17 @@ func (s *server) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 // BatchMetrics godoc
+// @Summary update metrics json
+// @Description set update metrics
+// @ID serverBatchMetrics
+// @Accept  json
+// @Produce json
+// @Param m body []metrics.Metric true "metrics data"
+// @Success 200 {object} []metrics.Metric
+// @Failure 400
+// @Failure 403
+// @Failure 501
+// @Router /updates/ [post]
 func (s *server) BatchMetrics(w http.ResponseWriter, r *http.Request) {
 	var m []metrics.Metric
 	w.Header().Set("Content-Type", "application/json")

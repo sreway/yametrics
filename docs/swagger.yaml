@@ -1,0 +1,188 @@
+definitions:
+  metrics.Metric:
+    properties:
+      delta:
+        type: integer
+      hash:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+      value:
+        type: number
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      description: show saved metrics
+      operationId: serverIndex
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: Show metrics
+  /ping:
+    get:
+      description: health check metric storage
+      operationId: serverPing
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: ping
+  /update/:
+    post:
+      consumes:
+      - application/json
+      description: set update metric
+      operationId: serverSetUpdateMetricJSON
+      parameters:
+      - description: metric data
+        in: body
+        name: m
+        required: true
+        schema:
+          $ref: '#/definitions/metrics.Metric'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/metrics.Metric'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: update metric json
+  /update/{metricType}/{metricName}/{metricValue}:
+    post:
+      description: add or update metric
+      operationId: serverSetUpdateMetric
+      parameters:
+      - description: Metric type
+        in: path
+        name: metricType
+        required: true
+        type: string
+      - description: Metric name
+        in: path
+        name: metricName
+        required: true
+        type: string
+      - description: Metric value
+        in: path
+        name: metricValue
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: add/update metric
+  /updates/:
+    post:
+      consumes:
+      - application/json
+      description: set update metrics
+      operationId: serverBatchMetrics
+      parameters:
+      - description: metrics data
+        in: body
+        name: m
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/metrics.Metric'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/metrics.Metric'
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: update metrics json
+  /value/:
+    post:
+      consumes:
+      - application/json
+      description: update metric value
+      operationId: serverMetricValueJSON
+      parameters:
+      - description: metric data
+        in: body
+        name: m
+        required: true
+        schema:
+          $ref: '#/definitions/metrics.Metric'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/metrics.Metric'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: metric value json
+  /value/{metricType}/{metricName}:
+    get:
+      description: get metric value
+      operationId: serverGetMetricValue
+      parameters:
+      - description: Metric name
+        in: path
+        name: metricName
+        required: true
+        type: string
+      - description: Metric type
+        in: path
+        name: metricType
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "501":
+          description: Not Implemented
+      summary: get metric value
+swagger: "2.0"
